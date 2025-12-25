@@ -3,12 +3,13 @@
 import { Player, PlayerRef } from "@remotion/player";
 import { useState, useRef } from "react";
 import { Upload } from "lucide-react";
-import { VideoComposition, Overlay, ANIMATION_TYPES, AnimationType } from "../remotion/Composition";
+import { VideoComposition, Overlay, ANIMATION_TYPES, AnimationType, ImageOverlayData, VideoOverlayData } from "../remotion/Composition";
 import { DraggableOverlay } from "../components/DraggableOverlay";
 import { Timeline } from "../components/Timeline";
 import { MediaHandle } from "../components/MediaHandle";
 import { SAMPLE_VIDEO, FONTS, TOTAL_FRAMES, FPS } from "../lib/constants";
-import { createGlass, createText } from "../lib/utils";
+import { createImage, createVideo, createText } from "../lib/utils";
+import { Toggle } from "../components/ui/toggle";
 
 const ANIMATION_LABELS: Record<AnimationType, string> = {
   none: "None",
@@ -52,8 +53,8 @@ export default function Home() {
     if (selectedId === id) setSelectedId(null);
   };
 
-  const add = (type: "glass" | "text") => {
-    const o = type === "glass" ? createGlass() : createText();
+  const add = (type: "image" | "video" | "text") => {
+    const o = type === "image" ? createImage() : type === "video" ? createVideo() : createText();
     setOverlays((prev) => [...prev, o]);
     setSelectedId(o.id);
   };
@@ -89,8 +90,9 @@ export default function Home() {
 
         <div className="flex justify-between items-center">
           <span className="text-sm text-white/50">Overlays</span>
-          <div className="flex gap-2">
-            <button onClick={() => add("glass")} className={`${glassBtn} text-xs`}>+ Glass</button>
+          <div className="flex gap-1">
+            <button onClick={() => add("image")} className={`${glassBtn} text-xs`}>+ Image</button>
+            <button onClick={() => add("video")} className={`${glassBtn} text-xs`}>+ Video</button>
             <button onClick={() => add("text")} className={`${glassBtn} text-xs`}>+ Text</button>
           </div>
         </div>
@@ -106,9 +108,20 @@ export default function Home() {
             }`}
           >
             <div className="flex justify-between items-center">
-              <span className={`text-xs px-2 py-0.5 rounded-lg ${glass}`}>
-                {o.type === "glass" ? "Glass" : "Text"}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className={`text-xs px-2 py-0.5 rounded-lg ${glass} capitalize`}>
+                  {o.type}
+                </span>
+                <Toggle
+                  size="sm"
+                  pressed={o.glass || false}
+                  onPressedChange={(pressed) => update(o.id, { glass: pressed })}
+                  onClick={(e) => e.stopPropagation()}
+                  className="h-6 px-2 text-[10px] data-[state=on]:bg-blue-500/30 data-[state=on]:text-blue-300"
+                >
+                  Glass
+                </Toggle>
+              </div>
               <button
                 onClick={(e) => { e.stopPropagation(); remove(o.id); }}
                 className="text-white/40 hover:text-red-400 transition-colors"
@@ -117,30 +130,32 @@ export default function Home() {
               </button>
             </div>
 
-            {o.type === "glass" ? (
+            {(o.type === "image" || o.type === "video") && (
               <div className="flex gap-2">
                 <input
-                  value={o.mediaSrc}
-                  onChange={(e) => update(o.id, { mediaSrc: e.target.value })}
+                  value={o.src}
+                  onChange={(e) => update(o.id, { src: e.target.value })}
                   onClick={(e) => e.stopPropagation()}
-                  placeholder="Image/Video URL"
+                  placeholder={`${o.type === "image" ? "Image" : "Video"} URL`}
                   className={`flex-1 ${glassInput} py-1.5`}
                 />
                 <label className={`${glassBtn} flex items-center px-2`}>
                   <Upload size={14} />
                   <input
                     type="file"
-                    accept="image/*,video/*"
+                    accept={o.type === "image" ? "image/*" : "video/*"}
                     className="hidden"
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file) update(o.id, { mediaSrc: URL.createObjectURL(file) });
+                      if (file) update(o.id, { src: URL.createObjectURL(file) });
                     }}
                   />
                 </label>
               </div>
-            ) : (
+            )}
+
+            {o.type === "text" && (
               <>
                 <input
                   value={o.text}
@@ -229,8 +244,12 @@ export default function Home() {
                   containerRef={containerRef}
                 />
               ))}
-              {selected?.type === "glass" && selected.mediaSrc && (
-                <MediaHandle overlay={selected} onUpdate={(d) => update(selected.id, d)} containerRef={containerRef} />
+              {selected && (selected.type === "image" || selected.type === "video") && selected.glass && (
+                <MediaHandle
+                  overlay={selected as ImageOverlayData | VideoOverlayData}
+                  onUpdate={(d) => update(selected.id, d)}
+                  containerRef={containerRef}
+                />
               )}
             </div>
           </div>

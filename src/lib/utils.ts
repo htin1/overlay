@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import type { GlassOverlayData, TextOverlayData } from "@/remotion/Composition"
+import type { ImageOverlayData, VideoOverlayData, TextOverlayData } from "@/remotion/Composition"
 import { TOTAL_FRAMES } from "./constants"
 
 export function cn(...inputs: ClassValue[]) {
@@ -26,18 +26,35 @@ export function isVideo(src: string): boolean {
   return /\.(mp4|webm|mov|avi)$/i.test(src);
 }
 
-// Create default glass overlay
-export function createGlass(): GlassOverlayData {
+// Create default image overlay
+export function createImage(): ImageOverlayData {
   return {
     id: crypto.randomUUID(),
-    type: "glass",
-    mediaSrc: "",
-    mediaX: 10, mediaY: 10, mediaW: 80, mediaH: 80,
+    type: "image",
+    src: "",
     x: 5, y: 60, w: 20, h: 25,
+    mediaX: 10, mediaY: 10, mediaW: 80, mediaH: 80,
     startFrame: 0,
     endFrame: TOTAL_FRAMES,
     enterAnimation: "fade",
     exitAnimation: "none",
+    glass: false,
+  };
+}
+
+// Create default video overlay
+export function createVideo(): VideoOverlayData {
+  return {
+    id: crypto.randomUUID(),
+    type: "video",
+    src: "",
+    x: 5, y: 60, w: 20, h: 25,
+    mediaX: 10, mediaY: 10, mediaW: 80, mediaH: 80,
+    startFrame: 0,
+    endFrame: TOTAL_FRAMES,
+    enterAnimation: "fade",
+    exitAnimation: "none",
+    glass: false,
   };
 }
 
@@ -54,5 +71,6 @@ export function createText(): TextOverlayData {
     endFrame: TOTAL_FRAMES,
     enterAnimation: "fade",
     exitAnimation: "none",
+    glass: false,
   };
 }

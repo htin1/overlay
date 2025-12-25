@@ -1,6 +1,5 @@
 import { AbsoluteFill, Video, Sequence } from "remotion";
-import { GlassOverlay } from "./GlassOverlay";
-import { TextOverlay } from "./TextOverlay";
+import { OverlayItem } from "./OverlayItem";
 
 export const ANIMATION_TYPES = [
   "none",
@@ -34,12 +33,24 @@ interface BaseOverlay {
   endFrame: number;
   enterAnimation?: AnimationType;
   exitAnimation?: AnimationType;
+  glass?: boolean;
 }
 
-export interface GlassOverlayData extends BaseOverlay {
-  type: "glass";
-  mediaSrc: string;
-  mediaX: number; // % within glass
+export interface ImageOverlayData extends BaseOverlay {
+  type: "image";
+  src: string;
+  // Media position within glass (% values)
+  mediaX: number;
+  mediaY: number;
+  mediaW: number;
+  mediaH: number;
+}
+
+export interface VideoOverlayData extends BaseOverlay {
+  type: "video";
+  src: string;
+  // Media position within glass (% values)
+  mediaX: number;
   mediaY: number;
   mediaW: number;
   mediaH: number;
@@ -52,7 +63,7 @@ export interface TextOverlayData extends BaseOverlay {
   fontFamily: string;
 }
 
-export type Overlay = GlassOverlayData | TextOverlayData;
+export type Overlay = ImageOverlayData | VideoOverlayData | TextOverlayData;
 
 export interface CompositionProps {
   videoSrc?: string;
@@ -73,34 +84,7 @@ export function VideoComposition({ videoSrc, overlays = [] }: CompositionProps) 
             from={overlay.startFrame}
             durationInFrames={duration}
           >
-            {overlay.type === "glass" ? (
-              <GlassOverlay
-                mediaSrc={overlay.mediaSrc}
-                mediaX={overlay.mediaX}
-                mediaY={overlay.mediaY}
-                mediaW={overlay.mediaW}
-                mediaH={overlay.mediaH}
-                x={overlay.x}
-                y={overlay.y}
-                width={overlay.w}
-                height={overlay.h}
-                enterAnimation={overlay.enterAnimation}
-                exitAnimation={overlay.exitAnimation}
-                durationInFrames={duration}
-              />
-            ) : (
-              <TextOverlay
-                text={overlay.text}
-                fontSize={overlay.fontSize}
-                fontFamily={overlay.fontFamily}
-                x={overlay.x}
-                y={overlay.y}
-                width={overlay.w}
-                enterAnimation={overlay.enterAnimation}
-                exitAnimation={overlay.exitAnimation}
-                durationInFrames={duration}
-              />
-            )}
+            <OverlayItem overlay={overlay} durationInFrames={duration} />
           </Sequence>
         );
       })}

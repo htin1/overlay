@@ -15,7 +15,8 @@ const MIN_CLIP_DURATION = 10;
 const TRACK_LABEL_WIDTH = 96;
 
 const OVERLAY_COLORS = {
-  glass: { bg: "bg-purple-500", clip: "bg-purple-500/40 border-purple-500/60 hover:bg-purple-500/50" },
+  image: { bg: "bg-purple-500", clip: "bg-purple-500/40 border-purple-500/60 hover:bg-purple-500/50" },
+  video: { bg: "bg-blue-500", clip: "bg-blue-500/40 border-blue-500/60 hover:bg-blue-500/50" },
   text: { bg: "bg-amber-500", clip: "bg-amber-500/40 border-amber-500/60 hover:bg-amber-500/50" },
 } as const;
 
@@ -215,7 +216,9 @@ const Track = memo(function Track({
   onSeek: (frame: number) => void;
 }) {
   const colors = OVERLAY_COLORS[overlay.type];
-  const label = overlay.type === "glass" ? "Glass" : (overlay as TextOverlayData).text?.slice(0, 12) || "Text";
+  const label = overlay.type === "text"
+    ? (overlay as TextOverlayData).text?.slice(0, 12) || "Text"
+    : overlay.type.charAt(0).toUpperCase() + overlay.type.slice(1);
 
   return (
     <div className="flex border-b border-white/5 hover:bg-white/[0.02]">
@@ -309,7 +312,7 @@ const Clip = memo(function Clip({
       <div className="absolute left-0 top-0 w-2 h-full cursor-ew-resize hover:bg-white/20 rounded-l-md" onMouseDown={(e) => beginDrag(e, "left")} />
       <div className="absolute inset-0 flex items-center justify-center px-3">
         <span className="text-xs text-white/80 truncate select-none">
-          {overlay.type === "glass" ? "Glass" : (overlay as TextOverlayData).text?.slice(0, 20)}
+          {overlay.type === "text" ? (overlay as TextOverlayData).text?.slice(0, 20) : overlay.type.charAt(0).toUpperCase() + overlay.type.slice(1)}
         </span>
       </div>
       <div className="absolute right-0 top-0 w-2 h-full cursor-ew-resize hover:bg-white/20 rounded-r-md" onMouseDown={(e) => beginDrag(e, "right")} />
