@@ -3,34 +3,22 @@ import { GlassOverlay } from "./GlassOverlay";
 
 export interface CompositionProps {
   videoSrc?: string;
-  overlayText?: string;
-  overlayImage?: string;
-  overlayPosition?: "bottom-left" | "bottom-right" | "center";
+  text?: string;
+  image?: string;
+  imageSize?: number;
+  x?: number;
+  y?: number;
+  w?: number;
+  h?: number;
 }
 
-export const VideoComposition: React.FC<CompositionProps> = ({
-  videoSrc = "",
-  overlayText,
-  overlayImage,
-  overlayPosition = "bottom-left",
-}) => {
+export function VideoComposition({ videoSrc, text, image, imageSize, x, y, w, h }: CompositionProps) {
   return (
     <AbsoluteFill style={{ backgroundColor: "black" }}>
       {videoSrc && (
-        <Video
-          src={videoSrc}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-          }}
-        />
+        <Video src={videoSrc} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       )}
-      <GlassOverlay
-        text={overlayText}
-        imageSrc={overlayImage}
-        position={overlayPosition}
-      />
+      <GlassOverlay text={text} imageSrc={image} imageSize={imageSize} x={x} y={y} width={w} height={h} />
     </AbsoluteFill>
   );
-};
+}
