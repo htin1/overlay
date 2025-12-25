@@ -36,18 +36,9 @@ interface BaseOverlay {
   glass?: boolean;
 }
 
-export interface ImageOverlayData extends BaseOverlay {
-  type: "image";
-  src: string;
-  // Media position within glass (% values)
-  mediaX: number;
-  mediaY: number;
-  mediaW: number;
-  mediaH: number;
-}
-
-export interface VideoOverlayData extends BaseOverlay {
-  type: "video";
+// Image and Video share the same structure
+export interface MediaOverlayData extends BaseOverlay {
+  type: "image" | "video";
   src: string;
   // Media position within glass (% values)
   mediaX: number;
@@ -63,7 +54,11 @@ export interface TextOverlayData extends BaseOverlay {
   fontFamily: string;
 }
 
-export type Overlay = ImageOverlayData | VideoOverlayData | TextOverlayData;
+export type Overlay = MediaOverlayData | TextOverlayData;
+
+// Type guards for convenience
+export const isMediaOverlay = (o: Overlay): o is MediaOverlayData => o.type === "image" || o.type === "video";
+export const isTextOverlay = (o: Overlay): o is TextOverlayData => o.type === "text";
 
 export interface CompositionProps {
   videoSrc?: string;

@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useCallback } from "react";
+import { useDrag } from "../hooks/useDrag";
 
 interface Props {
   x: number;
@@ -23,47 +24,36 @@ export function DraggableOverlay({
   onSelect,
   containerRef,
 }: Props) {
-  const [dragging, setDragging] = useState<"move" | "se" | null>(null);
-  const start = useRef({ x: 0, y: 0, w: 0, h: 0, mouseX: 0, mouseY: 0 });
+  const initial = useRef({ x: 0, y: 0, w: 0, h: 0 });
 
-  const onMouseDown = (e: React.MouseEvent, mode: "move" | "se") => {
-    e.preventDefault();
-    e.stopPropagation();
-    onSelect?.();
-    setDragging(mode);
-    start.current = { x, y, w: width, h: height, mouseX: e.clientX, mouseY: e.clientY };
-  };
-
-  useEffect(() => {
-    if (!dragging) return;
-
-    const onMouseMove = (e: MouseEvent) => {
+  const { startDrag } = useDrag<"move" | "resize">({
+    onDrag: (mode, deltaX, deltaY) => {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
 
-      const dx = ((e.clientX - start.current.mouseX) / rect.width) * 100;
-      const dy = ((e.clientY - start.current.mouseY) / rect.height) * 100;
+      const dx = (deltaX / rect.width) * 100;
+      const dy = (deltaY / rect.height) * 100;
 
-      if (dragging === "move") {
-        const newX = Math.max(0, Math.min(100 - width, start.current.x + dx));
-        const newY = Math.max(0, Math.min(100 - height, start.current.y + dy));
+      if (mode === "move") {
+        const newX = Math.max(0, Math.min(100 - width, initial.current.x + dx));
+        const newY = Math.max(0, Math.min(100 - height, initial.current.y + dy));
         onUpdate(newX, newY, width, height);
       } else {
-        const newW = Math.max(10, Math.min(100 - x, start.current.w + dx));
-        const newH = Math.max(5, Math.min(100 - y, start.current.h + dy));
+        const newW = Math.max(10, Math.min(100 - x, initial.current.w + dx));
+        const newH = Math.max(5, Math.min(100 - y, initial.current.h + dy));
         onUpdate(x, y, newW, newH);
       }
-    };
+    },
+  });
 
-    const onMouseUp = () => setDragging(null);
-
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-    };
-  }, [dragging, x, y, width, height, onUpdate, containerRef]);
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent, mode: "move" | "resize") => {
+      onSelect?.();
+      initial.current = { x, y, w: width, h: height };
+      startDrag(e, mode);
+    },
+    [x, y, width, height, onSelect, startDrag]
+  );
 
   return (
     <div
@@ -71,13 +61,13 @@ export function DraggableOverlay({
         selected ? "border-blue-500" : "border-white/30"
       }`}
       style={{ left: `${x}%`, top: `${y}%`, width: `${width}%`, height: `${height}%` }}
-      onMouseDown={(e) => onMouseDown(e, "move")}
+      onMouseDown={(e) => handleMouseDown(e, "move")}
     >
       <div
         className={`absolute -bottom-1.5 -right-1.5 w-3 h-3 rounded-full border-2 cursor-se-resize pointer-events-auto ${
           selected ? "bg-blue-500 border-blue-600" : "bg-white border-zinc-800"
         }`}
-        onMouseDown={(e) => onMouseDown(e, "se")}
+        onMouseDown={(e) => handleMouseDown(e, "resize")}
       />
     </div>
   );

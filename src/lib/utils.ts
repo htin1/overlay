@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import type { ImageOverlayData, VideoOverlayData, TextOverlayData } from "@/remotion/Composition"
+import type { MediaOverlayData, TextOverlayData } from "@/remotion/Composition"
 import { TOTAL_FRAMES } from "./constants"
 
 export function cn(...inputs: ClassValue[]) {
@@ -21,16 +21,11 @@ export function clickToFrame(e: React.MouseEvent, pixelsPerFrame: number, totalF
   return Math.max(0, Math.min(totalFrames - 1, Math.round(x / pixelsPerFrame)));
 }
 
-// Check if source is a video file
-export function isVideo(src: string): boolean {
-  return /\.(mp4|webm|mov|avi)$/i.test(src);
-}
-
-// Create default image overlay
-export function createImage(): ImageOverlayData {
+// Create default media overlay (image or video)
+export function createMedia(type: "image" | "video"): MediaOverlayData {
   return {
     id: crypto.randomUUID(),
-    type: "image",
+    type,
     src: "",
     x: 5, y: 60, w: 20, h: 25,
     mediaX: 10, mediaY: 10, mediaW: 80, mediaH: 80,
@@ -42,21 +37,9 @@ export function createImage(): ImageOverlayData {
   };
 }
 
-// Create default video overlay
-export function createVideo(): VideoOverlayData {
-  return {
-    id: crypto.randomUUID(),
-    type: "video",
-    src: "",
-    x: 5, y: 60, w: 20, h: 25,
-    mediaX: 10, mediaY: 10, mediaW: 80, mediaH: 80,
-    startFrame: 0,
-    endFrame: TOTAL_FRAMES,
-    enterAnimation: "fade",
-    exitAnimation: "none",
-    glass: false,
-  };
-}
+// Convenience aliases
+export const createImage = () => createMedia("image");
+export const createVideo = () => createMedia("video");
 
 // Create default text overlay
 export function createText(): TextOverlayData {

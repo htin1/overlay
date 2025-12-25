@@ -1,24 +1,15 @@
 "use client";
 
-import { useRef, useState, useEffect, memo } from "react";
+import React, { useRef, useCallback, memo, useState } from "react";
 import { PlayerRef } from "@remotion/player";
 import type { Overlay, TextOverlayData } from "@/remotion/Composition";
 import { usePlayerFrame } from "../hooks/usePlayerFrame";
+import { useDrag } from "../hooks/useDrag";
 import { ZoomIn, ZoomOut } from "lucide-react";
 import { clickToFrame, formatTime } from "../lib/utils";
+import { OVERLAY_COLORS, TIMELINE_CONFIG } from "../lib/constants";
 
-// Shared constants
-const BASE_PIXELS_PER_FRAME = 1;
-const MIN_ZOOM = 0.5;
-const MAX_ZOOM = 4;
-const MIN_CLIP_DURATION = 10;
-const TRACK_LABEL_WIDTH = 96;
-
-const OVERLAY_COLORS = {
-  image: { bg: "bg-purple-500", clip: "bg-purple-500/40 border-purple-500/60 hover:bg-purple-500/50" },
-  video: { bg: "bg-blue-500", clip: "bg-blue-500/40 border-blue-500/60 hover:bg-blue-500/50" },
-  text: { bg: "bg-amber-500", clip: "bg-amber-500/40 border-amber-500/60 hover:bg-amber-500/50" },
-} as const;
+const { BASE_PIXELS_PER_FRAME, MIN_ZOOM, MAX_ZOOM, MIN_CLIP_DURATION, TRACK_LABEL_WIDTH } = TIMELINE_CONFIG;
 
 interface TimelineProps {
   overlays: Overlay[];
@@ -59,18 +50,13 @@ export function Timeline({
         </div>
       </div>
 
-      {/* Scrollable area - fixed container, content scrolls */}
+      {/* Scrollable area */}
       <div ref={scrollRef} className="relative overflow-x-auto overflow-y-auto" style={{ minHeight: 150, maxHeight: 300 }}>
         <div className="relative inline-block" style={{ minWidth: "100%", width: timelineWidth + TRACK_LABEL_WIDTH }}>
           {/* Ruler */}
           <div className="flex sticky top-0 z-10">
             <div className="w-24 shrink-0 h-8 border-r border-white/10 bg-zinc-900" />
-            <Ruler
-              totalFrames={totalFrames}
-              fps={fps}
-              pixelsPerFrame={pixelsPerFrame}
-              onSeek={seek}
-            />
+            <Ruler totalFrames={totalFrames} fps={fps} pixelsPerFrame={pixelsPerFrame} onSeek={seek} />
           </div>
 
           {/* Tracks */}
@@ -88,19 +74,14 @@ export function Timeline({
               />
             ))}
 
-            {/* Playhead */}
             {overlays.length > 0 && (
-              <div
-                className="absolute top-0 h-full pointer-events-none"
-                style={{ left: TRACK_LABEL_WIDTH, width: timelineWidth }}
-              >
+              <div className="absolute top-0 h-full pointer-events-none" style={{ left: TRACK_LABEL_WIDTH, width: timelineWidth }}>
                 <Playhead playerRef={playerRef} pixelsPerFrame={pixelsPerFrame} />
               </div>
             )}
           </div>
         </div>
 
-        {/* Empty state - fixed position overlay */}
         {overlays.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center text-white/30 text-sm pointer-events-none">
             Add an overlay to see it here
@@ -111,55 +92,45 @@ export function Timeline({
   );
 }
 
+
 // --- Sub-components ---
 
 function ZoomSlider({ zoom, onZoomChange }: { zoom: number; onZoomChange: (z: number) => void }) {
   const sliderRef = useRef<HTMLDivElement>(null);
-  const [dragging, setDragging] = useState(false);
 
   const zoomToPercent = (z: number) => ((z - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100;
   const percentToZoom = (p: number) => MIN_ZOOM + (p / 100) * (MAX_ZOOM - MIN_ZOOM);
 
-  const updateZoom = (clientX: number) => {
+  const updateFromX = useCallback((clientX: number) => {
     const rect = sliderRef.current?.getBoundingClientRect();
     if (!rect) return;
     const percent = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
     onZoomChange(percentToZoom(percent));
-  };
+  }, [onZoomChange]);
 
-  useEffect(() => {
-    if (!dragging) return;
-    const onMove = (e: MouseEvent) => updateZoom(e.clientX);
-    const onUp = () => setDragging(false);
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-  }, [dragging]);
+  const { startDrag } = useDrag<"slide">({
+    onDrag: (_, deltaX) => {
+      const rect = sliderRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const currentPercent = zoomToPercent(zoom);
+      const deltaPercent = (deltaX / rect.width) * 100;
+      const newPercent = Math.max(0, Math.min(100, currentPercent + deltaPercent));
+      onZoomChange(percentToZoom(newPercent));
+    },
+  });
 
   return (
     <div
       ref={sliderRef}
       className="relative w-24 h-4 cursor-pointer group"
       onMouseDown={(e) => {
-        setDragging(true);
-        updateZoom(e.clientX);
+        updateFromX(e.clientX);
+        startDrag(e, "slide");
       }}
     >
-      {/* Track */}
       <div className="absolute top-1/2 -translate-y-1/2 w-full h-1 bg-white/10 rounded-full" />
-      {/* Fill */}
-      <div
-        className="absolute top-1/2 -translate-y-1/2 h-1 bg-white/30 rounded-full"
-        style={{ width: `${zoomToPercent(zoom)}%` }}
-      />
-      {/* Thumb */}
-      <div
-        className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-md transition-transform group-hover:scale-110"
-        style={{ left: `calc(${zoomToPercent(zoom)}% - 6px)` }}
-      />
+      <div className="absolute top-1/2 -translate-y-1/2 h-1 bg-white/30 rounded-full" style={{ width: `${zoomToPercent(zoom)}%` }} />
+      <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-md transition-transform group-hover:scale-110" style={{ left: `calc(${zoomToPercent(zoom)}% - 6px)` }} />
     </div>
   );
 }
@@ -223,7 +194,7 @@ const Track = memo(function Track({
   return (
     <div className="flex border-b border-white/5 hover:bg-white/[0.02]">
       <div className="w-24 shrink-0 px-3 py-2 flex items-center gap-2 border-r border-white/10 bg-zinc-900/50">
-        <div className={`w-2 h-2 rounded-full ${colors.bg}`} />
+        <div className={`w-2 h-2 rounded-full ${colors.dot}`} />
         <span className="text-xs text-white/60 truncate">{label}</span>
       </div>
       <div
@@ -259,63 +230,51 @@ const Clip = memo(function Clip({
   onSelect: () => void;
   onUpdateTiming: (start: number, end: number) => void;
 }) {
-  const [drag, setDrag] = useState<"move" | "left" | "right" | null>(null);
-  const start = useRef({ mouseX: 0, startFrame: 0, endFrame: 0 });
-
+  const initial = useRef({ startFrame: 0, endFrame: 0 });
   const colors = OVERLAY_COLORS[overlay.type];
   const left = overlay.startFrame * pixelsPerFrame;
   const width = Math.max((overlay.endFrame - overlay.startFrame) * pixelsPerFrame, 20);
 
-  const beginDrag = (e: React.MouseEvent, mode: "move" | "left" | "right") => {
-    e.preventDefault();
-    e.stopPropagation();
-    onSelect();
-    setDrag(mode);
-    start.current = { mouseX: e.clientX, startFrame: overlay.startFrame, endFrame: overlay.endFrame };
-  };
+  const { startDrag } = useDrag<"move" | "left" | "right">({
+    onDrag: (mode, deltaX) => {
+      const delta = Math.round(deltaX / pixelsPerFrame);
+      const duration = initial.current.endFrame - initial.current.startFrame;
 
-  useEffect(() => {
-    if (!drag) return;
-
-    const onMove = (e: MouseEvent) => {
-      const dx = e.clientX - start.current.mouseX;
-      const delta = Math.round(dx / pixelsPerFrame);
-      const duration = start.current.endFrame - start.current.startFrame;
-
-      if (drag === "move") {
-        const newStart = Math.max(0, Math.min(totalFrames - duration, start.current.startFrame + delta));
+      if (mode === "move") {
+        const newStart = Math.max(0, Math.min(totalFrames - duration, initial.current.startFrame + delta));
         onUpdateTiming(newStart, newStart + duration);
-      } else if (drag === "left") {
-        const newStart = Math.max(0, Math.min(start.current.endFrame - MIN_CLIP_DURATION, start.current.startFrame + delta));
-        onUpdateTiming(newStart, start.current.endFrame);
+      } else if (mode === "left") {
+        const newStart = Math.max(0, Math.min(initial.current.endFrame - MIN_CLIP_DURATION, initial.current.startFrame + delta));
+        onUpdateTiming(newStart, initial.current.endFrame);
       } else {
-        const newEnd = Math.max(start.current.startFrame + MIN_CLIP_DURATION, Math.min(totalFrames, start.current.endFrame + delta));
-        onUpdateTiming(start.current.startFrame, newEnd);
+        const newEnd = Math.max(initial.current.startFrame + MIN_CLIP_DURATION, Math.min(totalFrames, initial.current.endFrame + delta));
+        onUpdateTiming(initial.current.startFrame, newEnd);
       }
-    };
+    },
+  });
 
-    const onUp = () => setDrag(null);
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-  }, [drag, pixelsPerFrame, totalFrames, onUpdateTiming]);
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent, mode: "move" | "left" | "right") => {
+      onSelect();
+      initial.current = { startFrame: overlay.startFrame, endFrame: overlay.endFrame };
+      startDrag(e, mode);
+    },
+    [overlay.startFrame, overlay.endFrame, onSelect, startDrag]
+  );
 
   return (
     <div
       className={`absolute top-1 bottom-1 rounded-md border cursor-move ${colors.clip} ${selected ? "ring-2 ring-white/50" : ""}`}
       style={{ left, width }}
-      onMouseDown={(e) => beginDrag(e, "move")}
+      onMouseDown={(e) => handleMouseDown(e, "move")}
     >
-      <div className="absolute left-0 top-0 w-2 h-full cursor-ew-resize hover:bg-white/20 rounded-l-md" onMouseDown={(e) => beginDrag(e, "left")} />
+      <div className="absolute left-0 top-0 w-2 h-full cursor-ew-resize hover:bg-white/20 rounded-l-md" onMouseDown={(e) => handleMouseDown(e, "left")} />
       <div className="absolute inset-0 flex items-center justify-center px-3">
         <span className="text-xs text-white/80 truncate select-none">
           {overlay.type === "text" ? (overlay as TextOverlayData).text?.slice(0, 20) : overlay.type.charAt(0).toUpperCase() + overlay.type.slice(1)}
         </span>
       </div>
-      <div className="absolute right-0 top-0 w-2 h-full cursor-ew-resize hover:bg-white/20 rounded-r-md" onMouseDown={(e) => beginDrag(e, "right")} />
+      <div className="absolute right-0 top-0 w-2 h-full cursor-ew-resize hover:bg-white/20 rounded-r-md" onMouseDown={(e) => handleMouseDown(e, "right")} />
     </div>
   );
 });

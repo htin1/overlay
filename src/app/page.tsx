@@ -3,32 +3,13 @@
 import { Player, PlayerRef } from "@remotion/player";
 import { useState, useRef } from "react";
 import { Upload } from "lucide-react";
-import { VideoComposition, Overlay, ANIMATION_TYPES, AnimationType, ImageOverlayData, VideoOverlayData } from "../remotion/Composition";
+import { VideoComposition, Overlay, isMediaOverlay } from "../remotion/Composition";
 import { DraggableOverlay } from "../components/DraggableOverlay";
 import { Timeline } from "../components/Timeline";
 import { MediaHandle } from "../components/MediaHandle";
-import { SAMPLE_VIDEO, FONTS, TOTAL_FRAMES, FPS } from "../lib/constants";
+import { OverlayCard } from "../components/OverlayCard";
+import { SAMPLE_VIDEO, TOTAL_FRAMES, FPS } from "../lib/constants";
 import { createImage, createVideo, createText } from "../lib/utils";
-import { Toggle } from "../components/ui/toggle";
-
-const ANIMATION_LABELS: Record<AnimationType, string> = {
-  none: "None",
-  fade: "Fade",
-  slideUp: "Slide Up",
-  slideDown: "Slide Down",
-  slideLeft: "Slide Left",
-  slideRight: "Slide Right",
-  scale: "Scale",
-  pop: "Pop",
-  wipeLeft: "Wipe Left",
-  wipeRight: "Wipe Right",
-  wipeUp: "Wipe Up",
-  wipeDown: "Wipe Down",
-  zoom: "Zoom",
-  flip: "Flip",
-  rotate: "Rotate",
-  bounce: "Bounce",
-};
 
 const glass = "bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg";
 const glassHover = "hover:bg-white/15 hover:border-white/30";
@@ -98,122 +79,14 @@ export default function Home() {
         </div>
 
         {overlays.map((o) => (
-          <div
+          <OverlayCard
             key={o.id}
-            onClick={() => setSelectedId(o.id)}
-            className={`p-3 rounded-xl backdrop-blur-xl border shadow-lg space-y-3 cursor-pointer transition-all ${
-              selectedId === o.id
-                ? "bg-blue-500/20 border-blue-500/50"
-                : "bg-white/5 border-white/10 hover:bg-white/10"
-            }`}
-          >
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <span className={`text-xs px-2 py-0.5 rounded-lg ${glass} capitalize`}>
-                  {o.type}
-                </span>
-                <Toggle
-                  size="sm"
-                  pressed={o.glass || false}
-                  onPressedChange={(pressed) => update(o.id, { glass: pressed })}
-                  onClick={(e) => e.stopPropagation()}
-                  className="h-6 px-2 text-[10px] data-[state=on]:bg-blue-500/30 data-[state=on]:text-blue-300"
-                >
-                  Glass
-                </Toggle>
-              </div>
-              <button
-                onClick={(e) => { e.stopPropagation(); remove(o.id); }}
-                className="text-white/40 hover:text-red-400 transition-colors"
-              >
-                ×
-              </button>
-            </div>
-
-            {(o.type === "image" || o.type === "video") && (
-              <div className="flex gap-2">
-                <input
-                  value={o.src}
-                  onChange={(e) => update(o.id, { src: e.target.value })}
-                  onClick={(e) => e.stopPropagation()}
-                  placeholder={`${o.type === "image" ? "Image" : "Video"} URL`}
-                  className={`flex-1 ${glassInput} py-1.5`}
-                />
-                <label className={`${glassBtn} flex items-center px-2`}>
-                  <Upload size={14} />
-                  <input
-                    type="file"
-                    accept={o.type === "image" ? "image/*" : "video/*"}
-                    className="hidden"
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) update(o.id, { src: URL.createObjectURL(file) });
-                    }}
-                  />
-                </label>
-              </div>
-            )}
-
-            {o.type === "text" && (
-              <>
-                <input
-                  value={o.text}
-                  onChange={(e) => update(o.id, { text: e.target.value })}
-                  onClick={(e) => e.stopPropagation()}
-                  placeholder="Text"
-                  className={`w-full ${glassInput} py-1.5`}
-                />
-                <div className="flex items-center gap-2 text-xs text-white/50">
-                  <span className="w-12">Size {o.fontSize}</span>
-                  <input
-                    type="range" min={16} max={120} value={o.fontSize}
-                    onChange={(e) => update(o.id, { fontSize: +e.target.value })}
-                    onClick={(e) => e.stopPropagation()}
-                    className="flex-1 accent-white/50"
-                  />
-                </div>
-                <select
-                  value={o.fontFamily}
-                  onChange={(e) => update(o.id, { fontFamily: e.target.value })}
-                  onClick={(e) => e.stopPropagation()}
-                  className={`w-full ${glassInput} py-1.5`}
-                >
-                  {FONTS.map((f) => <option key={f} value={f} className="bg-zinc-900">{f}</option>)}
-                </select>
-              </>
-            )}
-
-            {/* Animation controls */}
-            <div className="flex gap-2 pt-1">
-              <div className="flex-1">
-                <span className="text-[10px] text-white/40 uppercase tracking-wide">Enter</span>
-                <select
-                  value={o.enterAnimation || "fade"}
-                  onChange={(e) => update(o.id, { enterAnimation: e.target.value as AnimationType })}
-                  onClick={(e) => e.stopPropagation()}
-                  className={`w-full ${glassInput} py-1 text-xs mt-1`}
-                >
-                  {ANIMATION_TYPES.map((a) => (
-                    <option key={a} value={a} className="bg-zinc-900">{ANIMATION_LABELS[a]}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex-1">
-                <span className="text-[10px] text-white/40 uppercase tracking-wide">Exit</span>
-                <select
-                  value={o.exitAnimation || "none"}
-                  onChange={(e) => update(o.id, { exitAnimation: e.target.value as AnimationType })}
-                  onClick={(e) => e.stopPropagation()}
-                  className={`w-full ${glassInput} py-1 text-xs mt-1`}
-                >
-                  {ANIMATION_TYPES.map((a) => (
-                    <option key={a} value={a} className="bg-zinc-900">{ANIMATION_LABELS[a]}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
+            overlay={o}
+            selected={selectedId === o.id}
+            onSelect={() => setSelectedId(o.id)}
+            onUpdate={(data) => update(o.id, data)}
+            onRemove={() => remove(o.id)}
+          />
         ))}
       </div>
 
@@ -244,9 +117,9 @@ export default function Home() {
                   containerRef={containerRef}
                 />
               ))}
-              {selected && (selected.type === "image" || selected.type === "video") && selected.glass && (
+              {selected && isMediaOverlay(selected) && selected.glass && (
                 <MediaHandle
-                  overlay={selected as ImageOverlayData | VideoOverlayData}
+                  overlay={selected}
                   onUpdate={(d) => update(selected.id, d)}
                   containerRef={containerRef}
                 />

@@ -1,97 +1,54 @@
 import { useCurrentFrame, useVideoConfig, interpolate, spring } from "remotion";
 import type { AnimationType } from "./Composition";
 
-const ANIM_DURATION = 20; // frames for enter/exit animations
+const ANIM_DURATION = 20;
 
 interface AnimationStyle {
   opacity: number;
   transform: string;
 }
 
-function getEnterValue(
-  type: AnimationType,
-  progress: number,
-  springProgress: number,
-  bounceProgress: number
-): AnimationStyle {
-  switch (type) {
-    case "fade":
-      return { opacity: progress, transform: "none" };
-    case "slideUp":
-      return { opacity: progress, transform: `translateY(${(1 - progress) * 50}px)` };
-    case "slideDown":
-      return { opacity: progress, transform: `translateY(${(1 - progress) * -50}px)` };
-    case "slideLeft":
-      return { opacity: progress, transform: `translateX(${(1 - progress) * 50}px)` };
-    case "slideRight":
-      return { opacity: progress, transform: `translateX(${(1 - progress) * -50}px)` };
-    case "scale":
-      return { opacity: progress, transform: `scale(${0.5 + progress * 0.5})` };
-    case "pop":
-      return { opacity: Math.min(springProgress, 1), transform: `scale(${springProgress})` };
-    // Slide deck style - full screen wipes
-    case "wipeLeft":
-      return { opacity: 1, transform: `translateX(${(1 - progress) * 100}%)` };
-    case "wipeRight":
-      return { opacity: 1, transform: `translateX(${(1 - progress) * -100}%)` };
-    case "wipeUp":
-      return { opacity: 1, transform: `translateY(${(1 - progress) * 100}%)` };
-    case "wipeDown":
-      return { opacity: 1, transform: `translateY(${(1 - progress) * -100}%)` };
-    case "zoom":
-      return { opacity: progress, transform: `scale(${0.3 + springProgress * 0.7})` };
-    case "flip":
-      return { opacity: progress, transform: `perspective(1000px) rotateY(${(1 - progress) * 90}deg)` };
-    case "rotate":
-      return { opacity: progress, transform: `rotate(${(1 - progress) * -180}deg) scale(${progress})` };
-    case "bounce":
-      return { opacity: 1, transform: `translateY(${(1 - bounceProgress) * 100}%)` };
-    default:
-      return { opacity: 1, transform: "none" };
-  }
-}
+type AnimationFn = (progress: number, springProgress: number, bounceProgress: number) => AnimationStyle;
 
-function getExitValue(
-  type: AnimationType,
-  progress: number
-): AnimationStyle {
-  const inv = 1 - progress; // inverse for exit
-  switch (type) {
-    case "fade":
-      return { opacity: inv, transform: "none" };
-    case "slideUp":
-      return { opacity: inv, transform: `translateY(${progress * -50}px)` };
-    case "slideDown":
-      return { opacity: inv, transform: `translateY(${progress * 50}px)` };
-    case "slideLeft":
-      return { opacity: inv, transform: `translateX(${progress * -50}px)` };
-    case "slideRight":
-      return { opacity: inv, transform: `translateX(${progress * 50}px)` };
-    case "scale":
-      return { opacity: inv, transform: `scale(${1 - progress * 0.5})` };
-    case "pop":
-      return { opacity: inv, transform: `scale(${1 - progress * 0.5})` };
-    // Slide deck style exits
-    case "wipeLeft":
-      return { opacity: 1, transform: `translateX(${progress * -100}%)` };
-    case "wipeRight":
-      return { opacity: 1, transform: `translateX(${progress * 100}%)` };
-    case "wipeUp":
-      return { opacity: 1, transform: `translateY(${progress * -100}%)` };
-    case "wipeDown":
-      return { opacity: 1, transform: `translateY(${progress * 100}%)` };
-    case "zoom":
-      return { opacity: inv, transform: `scale(${1 + progress * 0.5})` };
-    case "flip":
-      return { opacity: inv, transform: `perspective(1000px) rotateY(${progress * -90}deg)` };
-    case "rotate":
-      return { opacity: inv, transform: `rotate(${progress * 180}deg) scale(${inv})` };
-    case "bounce":
-      return { opacity: 1, transform: `translateY(${progress * -100}%)` };
-    default:
-      return { opacity: 1, transform: "none" };
-  }
-}
+// Enter animation lookup table
+const enterAnimations: Record<AnimationType, AnimationFn> = {
+  none: () => ({ opacity: 1, transform: "none" }),
+  fade: (p) => ({ opacity: p, transform: "none" }),
+  slideUp: (p) => ({ opacity: p, transform: `translateY(${(1 - p) * 50}px)` }),
+  slideDown: (p) => ({ opacity: p, transform: `translateY(${(1 - p) * -50}px)` }),
+  slideLeft: (p) => ({ opacity: p, transform: `translateX(${(1 - p) * 50}px)` }),
+  slideRight: (p) => ({ opacity: p, transform: `translateX(${(1 - p) * -50}px)` }),
+  scale: (p) => ({ opacity: p, transform: `scale(${0.5 + p * 0.5})` }),
+  pop: (_, sp) => ({ opacity: Math.min(sp, 1), transform: `scale(${sp})` }),
+  wipeLeft: (p) => ({ opacity: 1, transform: `translateX(${(1 - p) * 100}%)` }),
+  wipeRight: (p) => ({ opacity: 1, transform: `translateX(${(1 - p) * -100}%)` }),
+  wipeUp: (p) => ({ opacity: 1, transform: `translateY(${(1 - p) * 100}%)` }),
+  wipeDown: (p) => ({ opacity: 1, transform: `translateY(${(1 - p) * -100}%)` }),
+  zoom: (p, sp) => ({ opacity: p, transform: `scale(${0.3 + sp * 0.7})` }),
+  flip: (p) => ({ opacity: p, transform: `perspective(1000px) rotateY(${(1 - p) * 90}deg)` }),
+  rotate: (p) => ({ opacity: p, transform: `rotate(${(1 - p) * -180}deg) scale(${p})` }),
+  bounce: (_, __, bp) => ({ opacity: 1, transform: `translateY(${(1 - bp) * 100}%)` }),
+};
+
+// Exit animation lookup table
+const exitAnimations: Record<AnimationType, (p: number) => AnimationStyle> = {
+  none: () => ({ opacity: 1, transform: "none" }),
+  fade: (p) => ({ opacity: 1 - p, transform: "none" }),
+  slideUp: (p) => ({ opacity: 1 - p, transform: `translateY(${p * -50}px)` }),
+  slideDown: (p) => ({ opacity: 1 - p, transform: `translateY(${p * 50}px)` }),
+  slideLeft: (p) => ({ opacity: 1 - p, transform: `translateX(${p * -50}px)` }),
+  slideRight: (p) => ({ opacity: 1 - p, transform: `translateX(${p * 50}px)` }),
+  scale: (p) => ({ opacity: 1 - p, transform: `scale(${1 - p * 0.5})` }),
+  pop: (p) => ({ opacity: 1 - p, transform: `scale(${1 - p * 0.5})` }),
+  wipeLeft: (p) => ({ opacity: 1, transform: `translateX(${p * -100}%)` }),
+  wipeRight: (p) => ({ opacity: 1, transform: `translateX(${p * 100}%)` }),
+  wipeUp: (p) => ({ opacity: 1, transform: `translateY(${p * -100}%)` }),
+  wipeDown: (p) => ({ opacity: 1, transform: `translateY(${p * 100}%)` }),
+  zoom: (p) => ({ opacity: 1 - p, transform: `scale(${1 + p * 0.5})` }),
+  flip: (p) => ({ opacity: 1 - p, transform: `perspective(1000px) rotateY(${p * -90}deg)` }),
+  rotate: (p) => ({ opacity: 1 - p, transform: `rotate(${p * 180}deg) scale(${1 - p})` }),
+  bounce: (p) => ({ opacity: 1, transform: `translateY(${p * -100}%)` }),
+};
 
 export function useOverlayAnimation(
   enterAnimation: AnimationType = "fade",
@@ -100,17 +57,14 @@ export function useOverlayAnimation(
 ): AnimationStyle {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-
   const exitStart = durationInFrames - ANIM_DURATION;
 
   // Enter animation
   if (frame < ANIM_DURATION && enterAnimation !== "none") {
-    const progress = interpolate(frame, [0, ANIM_DURATION], [0, 1], {
-      extrapolateRight: "clamp",
-    });
+    const progress = interpolate(frame, [0, ANIM_DURATION], [0, 1], { extrapolateRight: "clamp" });
     const springProgress = spring({ frame, fps, config: { damping: 12 } });
     const bounceProgress = spring({ frame, fps, config: { damping: 8, stiffness: 200 } });
-    return getEnterValue(enterAnimation, progress, springProgress, bounceProgress);
+    return enterAnimations[enterAnimation](progress, springProgress, bounceProgress);
   }
 
   // Exit animation
@@ -119,15 +73,8 @@ export function useOverlayAnimation(
       extrapolateLeft: "clamp",
       extrapolateRight: "clamp",
     });
-    return getExitValue(exitAnimation, progress);
+    return exitAnimations[exitAnimation](progress);
   }
 
   return { opacity: 1, transform: "none" };
 }
-
-// Legacy hook for backwards compatibility
-export function useOverlayOpacity() {
-  const frame = useCurrentFrame();
-  return interpolate(frame, [0, 20], [0, 1], { extrapolateRight: "clamp" });
-}
-

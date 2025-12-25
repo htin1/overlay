@@ -1,6 +1,6 @@
 import { Img, OffthreadVideo } from "remotion";
 import { useOverlayAnimation } from "./utils";
-import type { Overlay, ImageOverlayData, VideoOverlayData } from "./Composition";
+import type { Overlay, MediaOverlayData, TextOverlayData } from "./Composition";
 
 interface Props {
   overlay: Overlay;
@@ -37,7 +37,7 @@ export function OverlayItem({ overlay, durationInFrames }: Props) {
 
   // For image/video with glass: position media inside the glass container
   // Without glass: media fills the entire overlay
-  const getMediaStyle = (o: ImageOverlayData | VideoOverlayData): React.CSSProperties => {
+  const getMediaStyle = (o: MediaOverlayData): React.CSSProperties => {
     if (o.glass) {
       return {
         position: "absolute",
@@ -73,21 +73,22 @@ export function OverlayItem({ overlay, durationInFrames }: Props) {
   }
 
   // Text overlay
+  const text = overlay as TextOverlayData;
   return (
     <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <p
         style={{
           color: "white",
-          fontSize: overlay.fontSize,
-          fontFamily: overlay.fontFamily,
+          fontSize: text.fontSize,
+          fontFamily: text.fontFamily,
           fontWeight: 600,
-          textShadow: overlay.glass ? "none" : "0 2px 8px rgba(0, 0, 0, 0.5)",
+          textShadow: text.glass ? "none" : "0 2px 8px rgba(0, 0, 0, 0.5)",
           margin: 0,
           lineHeight: 1.2,
-          padding: overlay.glass ? 16 : 0,
+          padding: text.glass ? 16 : 0,
         }}
       >
-        {overlay.text}
+        {text.text}
       </p>
     </div>
   );
