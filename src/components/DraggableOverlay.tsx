@@ -7,17 +7,29 @@ interface Props {
   y: number;
   width: number;
   height: number;
+  selected?: boolean;
   onUpdate: (x: number, y: number, width: number, height: number) => void;
+  onSelect?: () => void;
   containerRef: React.RefObject<HTMLDivElement | null>;
 }
 
-export function DraggableOverlay({ x, y, width, height, onUpdate, containerRef }: Props) {
+export function DraggableOverlay({
+  x,
+  y,
+  width,
+  height,
+  selected,
+  onUpdate,
+  onSelect,
+  containerRef,
+}: Props) {
   const [dragging, setDragging] = useState<"move" | "se" | null>(null);
   const start = useRef({ x: 0, y: 0, w: 0, h: 0, mouseX: 0, mouseY: 0 });
 
   const onMouseDown = (e: React.MouseEvent, mode: "move" | "se") => {
     e.preventDefault();
     e.stopPropagation();
+    onSelect?.();
     setDragging(mode);
     start.current = { x, y, w: width, h: height, mouseX: e.clientX, mouseY: e.clientY };
   };
@@ -55,12 +67,16 @@ export function DraggableOverlay({ x, y, width, height, onUpdate, containerRef }
 
   return (
     <div
-      className="absolute border-2 border-white/50 rounded-2xl cursor-move pointer-events-auto"
+      className={`absolute rounded-2xl cursor-move pointer-events-auto border-2 ${
+        selected ? "border-blue-500" : "border-white/30"
+      }`}
       style={{ left: `${x}%`, top: `${y}%`, width: `${width}%`, height: `${height}%` }}
       onMouseDown={(e) => onMouseDown(e, "move")}
     >
       <div
-        className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white rounded-full border-2 border-zinc-800 cursor-se-resize pointer-events-auto"
+        className={`absolute -bottom-1.5 -right-1.5 w-3 h-3 rounded-full border-2 cursor-se-resize pointer-events-auto ${
+          selected ? "bg-blue-500 border-blue-600" : "bg-white border-zinc-800"
+        }`}
         onMouseDown={(e) => onMouseDown(e, "se")}
       />
     </div>
