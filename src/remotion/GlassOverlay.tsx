@@ -1,6 +1,7 @@
 import { Img, OffthreadVideo } from "remotion";
 import { isVideo } from "../lib/utils";
-import { useOverlayOpacity } from "./utils";
+import { useOverlayAnimation } from "./utils";
+import type { AnimationType } from "./Composition";
 
 interface Props {
   mediaSrc?: string;
@@ -12,6 +13,9 @@ interface Props {
   y?: number;
   width?: number;
   height?: number;
+  enterAnimation?: AnimationType;
+  exitAnimation?: AnimationType;
+  durationInFrames?: number;
 }
 
 export function GlassOverlay({
@@ -24,8 +28,11 @@ export function GlassOverlay({
   y = 70,
   width = 25,
   height = 15,
+  enterAnimation = "fade",
+  exitAnimation = "none",
+  durationInFrames = 300,
 }: Props) {
-  const opacity = useOverlayOpacity();
+  const { opacity, transform } = useOverlayAnimation(enterAnimation, exitAnimation, durationInFrames);
 
   if (!mediaSrc) return null;
 
@@ -54,6 +61,7 @@ export function GlassOverlay({
         borderRadius: 16,
         boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
         opacity,
+        transform,
         overflow: "hidden",
       }}
     >

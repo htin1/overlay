@@ -1,4 +1,5 @@
-import { useOverlayOpacity } from "./utils";
+import { useOverlayAnimation } from "./utils";
+import type { AnimationType } from "./Composition";
 
 interface Props {
   text?: string;
@@ -7,6 +8,9 @@ interface Props {
   x?: number;
   y?: number;
   width?: number;
+  enterAnimation?: AnimationType;
+  exitAnimation?: AnimationType;
+  durationInFrames?: number;
 }
 
 export function TextOverlay({
@@ -16,8 +20,11 @@ export function TextOverlay({
   x = 5,
   y = 70,
   width = 50,
+  enterAnimation = "fade",
+  exitAnimation = "none",
+  durationInFrames = 300,
 }: Props) {
-  const opacity = useOverlayOpacity();
+  const { opacity, transform } = useOverlayAnimation(enterAnimation, exitAnimation, durationInFrames);
 
   if (!text) return null;
 
@@ -29,6 +36,7 @@ export function TextOverlay({
         top: `${y}%`,
         width: `${width}%`,
         opacity,
+        transform,
       }}
     >
       <p

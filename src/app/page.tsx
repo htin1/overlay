@@ -3,12 +3,31 @@
 import { Player, PlayerRef } from "@remotion/player";
 import { useState, useRef } from "react";
 import { Upload } from "lucide-react";
-import { VideoComposition, Overlay } from "../remotion/Composition";
+import { VideoComposition, Overlay, ANIMATION_TYPES, AnimationType } from "../remotion/Composition";
 import { DraggableOverlay } from "../components/DraggableOverlay";
 import { Timeline } from "../components/Timeline";
 import { MediaHandle } from "../components/MediaHandle";
 import { SAMPLE_VIDEO, FONTS, TOTAL_FRAMES, FPS } from "../lib/constants";
 import { createGlass, createText } from "../lib/utils";
+
+const ANIMATION_LABELS: Record<AnimationType, string> = {
+  none: "None",
+  fade: "Fade",
+  slideUp: "Slide Up",
+  slideDown: "Slide Down",
+  slideLeft: "Slide Left",
+  slideRight: "Slide Right",
+  scale: "Scale",
+  pop: "Pop",
+  wipeLeft: "Wipe Left",
+  wipeRight: "Wipe Right",
+  wipeUp: "Wipe Up",
+  wipeDown: "Wipe Down",
+  zoom: "Zoom",
+  flip: "Flip",
+  rotate: "Rotate",
+  bounce: "Bounce",
+};
 
 const glass = "bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg";
 const glassHover = "hover:bg-white/15 hover:border-white/30";
@@ -149,6 +168,36 @@ export default function Home() {
                 </select>
               </>
             )}
+
+            {/* Animation controls */}
+            <div className="flex gap-2 pt-1">
+              <div className="flex-1">
+                <span className="text-[10px] text-white/40 uppercase tracking-wide">Enter</span>
+                <select
+                  value={o.enterAnimation || "fade"}
+                  onChange={(e) => update(o.id, { enterAnimation: e.target.value as AnimationType })}
+                  onClick={(e) => e.stopPropagation()}
+                  className={`w-full ${glassInput} py-1 text-xs mt-1`}
+                >
+                  {ANIMATION_TYPES.map((a) => (
+                    <option key={a} value={a} className="bg-zinc-900">{ANIMATION_LABELS[a]}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1">
+                <span className="text-[10px] text-white/40 uppercase tracking-wide">Exit</span>
+                <select
+                  value={o.exitAnimation || "none"}
+                  onChange={(e) => update(o.id, { exitAnimation: e.target.value as AnimationType })}
+                  onClick={(e) => e.stopPropagation()}
+                  className={`w-full ${glassInput} py-1 text-xs mt-1`}
+                >
+                  {ANIMATION_TYPES.map((a) => (
+                    <option key={a} value={a} className="bg-zinc-900">{ANIMATION_LABELS[a]}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
         ))}
       </div>

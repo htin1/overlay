@@ -36,6 +36,8 @@ export function createGlass(): GlassOverlayData {
     x: 5, y: 60, w: 20, h: 25,
     startFrame: 0,
     endFrame: TOTAL_FRAMES,
+    enterAnimation: "fade",
+    exitAnimation: "none",
   };
 }
 
@@ -50,5 +52,7 @@ export function createText(): TextOverlayData {
     x: 5, y: 50, w: 50, h: 10,
     startFrame: 0,
     endFrame: TOTAL_FRAMES,
+    enterAnimation: "fade",
+    exitAnimation: "none",
   };
 }
