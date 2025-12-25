@@ -1,4 +1,4 @@
-import { AbsoluteFill, Video } from "remotion";
+import { AbsoluteFill, Video, Sequence } from "remotion";
 import { GlassOverlay } from "./GlassOverlay";
 import { TextOverlay } from "./TextOverlay";
 
@@ -8,6 +8,8 @@ interface BaseOverlay {
   y: number;
   w: number;
   h: number;
+  startFrame: number;
+  endFrame: number;
 }
 
 export interface GlassOverlayData extends BaseOverlay {
@@ -39,32 +41,36 @@ export function VideoComposition({ videoSrc, overlays = [] }: CompositionProps) 
       {videoSrc && (
         <Video src={videoSrc} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       )}
-      {overlays.map((overlay) =>
-        overlay.type === "glass" ? (
-          <GlassOverlay
-            key={overlay.id}
-            mediaSrc={overlay.mediaSrc}
-            mediaX={overlay.mediaX}
-            mediaY={overlay.mediaY}
-            mediaW={overlay.mediaW}
-            mediaH={overlay.mediaH}
-            x={overlay.x}
-            y={overlay.y}
-            width={overlay.w}
-            height={overlay.h}
-          />
-        ) : (
-          <TextOverlay
-            key={overlay.id}
-            text={overlay.text}
-            fontSize={overlay.fontSize}
-            fontFamily={overlay.fontFamily}
-            x={overlay.x}
-            y={overlay.y}
-            width={overlay.w}
-          />
-        )
-      )}
+      {overlays.map((overlay) => (
+        <Sequence
+          key={overlay.id}
+          from={overlay.startFrame}
+          durationInFrames={overlay.endFrame - overlay.startFrame}
+        >
+          {overlay.type === "glass" ? (
+            <GlassOverlay
+              mediaSrc={overlay.mediaSrc}
+              mediaX={overlay.mediaX}
+              mediaY={overlay.mediaY}
+              mediaW={overlay.mediaW}
+              mediaH={overlay.mediaH}
+              x={overlay.x}
+              y={overlay.y}
+              width={overlay.w}
+              height={overlay.h}
+            />
+          ) : (
+            <TextOverlay
+              text={overlay.text}
+              fontSize={overlay.fontSize}
+              fontFamily={overlay.fontFamily}
+              x={overlay.x}
+              y={overlay.y}
+              width={overlay.w}
+            />
+          )}
+        </Sequence>
+      ))}
     </AbsoluteFill>
   );
 }
