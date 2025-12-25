@@ -1,20 +1,44 @@
-import { useCurrentFrame, interpolate, Img } from "remotion";
+import { useCurrentFrame, interpolate, Img, OffthreadVideo } from "remotion";
 
 interface Props {
-  text?: string;
-  imageSrc?: string;
-  imageSize?: number;
+  mediaSrc?: string;
+  mediaX?: number;
+  mediaY?: number;
+  mediaW?: number;
+  mediaH?: number;
   x?: number;
   y?: number;
   width?: number;
   height?: number;
 }
 
-export function GlassOverlay({ text, imageSrc, imageSize = 64, x = 5, y = 70, width = 25, height = 15 }: Props) {
+const isVideo = (src: string) => /\.(mp4|webm|mov|avi)$/i.test(src);
+
+export function GlassOverlay({
+  mediaSrc,
+  mediaX = 10,
+  mediaY = 10,
+  mediaW = 80,
+  mediaH = 80,
+  x = 5,
+  y = 70,
+  width = 25,
+  height = 15,
+}: Props) {
   const frame = useCurrentFrame();
   const opacity = interpolate(frame, [0, 20], [0, 1], { extrapolateRight: "clamp" });
 
-  if (!text && !imageSrc) return null;
+  if (!mediaSrc) return null;
+
+  const mediaStyle = {
+    position: "absolute" as const,
+    left: `${mediaX}%`,
+    top: `${mediaY}%`,
+    width: `${mediaW}%`,
+    height: `${mediaH}%`,
+    borderRadius: 12,
+    objectFit: "cover" as const,
+  };
 
   return (
     <div
@@ -23,42 +47,21 @@ export function GlassOverlay({ text, imageSrc, imageSize = 64, x = 5, y = 70, wi
         left: `${x}%`,
         top: `${y}%`,
         width: `${width}%`,
-        minHeight: `${height}%`,
+        height: `${height}%`,
         backdropFilter: "blur(20px) saturate(180%)",
         WebkitBackdropFilter: "blur(20px) saturate(180%)",
         background: "rgba(255, 255, 255, 0.15)",
         border: "1px solid rgba(255, 255, 255, 0.25)",
         borderRadius: 16,
         boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
-        padding: "16px 24px",
         opacity,
-        display: "flex",
-        flexDirection: "column" as const,
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 12,
+        overflow: "hidden",
       }}
     >
-      {imageSrc && (
-        <Img
-          src={imageSrc}
-          style={{ width: imageSize, height: imageSize, borderRadius: 12, objectFit: "cover" }}
-        />
-      )}
-      {text && (
-        <p
-          style={{
-            color: "white",
-            fontSize: 24,
-            fontWeight: 500,
-            textShadow: "0 1px 2px rgba(0, 0, 0, 0.2)",
-            margin: 0,
-            textAlign: "center",
-            lineHeight: 1.4,
-          }}
-        >
-          {text}
-        </p>
+      {isVideo(mediaSrc) ? (
+        <OffthreadVideo src={mediaSrc} style={mediaStyle} />
+      ) : (
+        <Img src={mediaSrc} style={mediaStyle} />
       )}
     </div>
   );

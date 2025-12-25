@@ -1,16 +1,32 @@
 import { AbsoluteFill, Video } from "remotion";
 import { GlassOverlay } from "./GlassOverlay";
+import { TextOverlay } from "./TextOverlay";
 
-export interface Overlay {
+interface BaseOverlay {
   id: string;
-  text: string;
-  image: string;
-  imageSize: number;
   x: number;
   y: number;
   w: number;
   h: number;
 }
+
+export interface GlassOverlayData extends BaseOverlay {
+  type: "glass";
+  mediaSrc: string;
+  mediaX: number; // % within glass
+  mediaY: number;
+  mediaW: number;
+  mediaH: number;
+}
+
+export interface TextOverlayData extends BaseOverlay {
+  type: "text";
+  text: string;
+  fontSize: number;
+  fontFamily: string;
+}
+
+export type Overlay = GlassOverlayData | TextOverlayData;
 
 export interface CompositionProps {
   videoSrc?: string;
@@ -23,18 +39,32 @@ export function VideoComposition({ videoSrc, overlays = [] }: CompositionProps) 
       {videoSrc && (
         <Video src={videoSrc} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       )}
-      {overlays.map((overlay) => (
-        <GlassOverlay
-          key={overlay.id}
-          text={overlay.text}
-          imageSrc={overlay.image}
-          imageSize={overlay.imageSize}
-          x={overlay.x}
-          y={overlay.y}
-          width={overlay.w}
-          height={overlay.h}
-        />
-      ))}
+      {overlays.map((overlay) =>
+        overlay.type === "glass" ? (
+          <GlassOverlay
+            key={overlay.id}
+            mediaSrc={overlay.mediaSrc}
+            mediaX={overlay.mediaX}
+            mediaY={overlay.mediaY}
+            mediaW={overlay.mediaW}
+            mediaH={overlay.mediaH}
+            x={overlay.x}
+            y={overlay.y}
+            width={overlay.w}
+            height={overlay.h}
+          />
+        ) : (
+          <TextOverlay
+            key={overlay.id}
+            text={overlay.text}
+            fontSize={overlay.fontSize}
+            fontFamily={overlay.fontFamily}
+            x={overlay.x}
+            y={overlay.y}
+            width={overlay.w}
+          />
+        )
+      )}
     </AbsoluteFill>
   );
 }
