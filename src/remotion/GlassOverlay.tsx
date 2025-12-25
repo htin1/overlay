@@ -1,4 +1,6 @@
-import { useCurrentFrame, interpolate, Img, OffthreadVideo } from "remotion";
+import { Img, OffthreadVideo } from "remotion";
+import { isVideo } from "../lib/utils";
+import { useOverlayOpacity } from "./utils";
 
 interface Props {
   mediaSrc?: string;
@@ -12,8 +14,6 @@ interface Props {
   height?: number;
 }
 
-const isVideo = (src: string) => /\.(mp4|webm|mov|avi)$/i.test(src);
-
 export function GlassOverlay({
   mediaSrc,
   mediaX = 10,
@@ -25,8 +25,7 @@ export function GlassOverlay({
   width = 25,
   height = 15,
 }: Props) {
-  const frame = useCurrentFrame();
-  const opacity = interpolate(frame, [0, 20], [0, 1], { extrapolateRight: "clamp" });
+  const opacity = useOverlayOpacity();
 
   if (!mediaSrc) return null;
 

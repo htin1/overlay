@@ -5,6 +5,7 @@ import { PlayerRef } from "@remotion/player";
 import type { Overlay, TextOverlayData } from "@/remotion/Composition";
 import { usePlayerFrame } from "../hooks/usePlayerFrame";
 import { ZoomIn, ZoomOut } from "lucide-react";
+import { clickToFrame, formatTime } from "../lib/utils";
 
 // Shared constants
 const BASE_PIXELS_PER_FRAME = 1;
@@ -17,20 +18,6 @@ const OVERLAY_COLORS = {
   glass: { bg: "bg-purple-500", clip: "bg-purple-500/40 border-purple-500/60 hover:bg-purple-500/50" },
   text: { bg: "bg-amber-500", clip: "bg-amber-500/40 border-amber-500/60 hover:bg-amber-500/50" },
 } as const;
-
-// Utility: convert click position to frame
-function clickToFrame(e: React.MouseEvent, pixelsPerFrame: number, totalFrames: number): number {
-  const rect = e.currentTarget.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  return Math.max(0, Math.min(totalFrames - 1, Math.round(x / pixelsPerFrame)));
-}
-
-// Utility: format seconds to M:SS
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
 
 interface TimelineProps {
   overlays: Overlay[];
@@ -59,30 +46,21 @@ export function Timeline({
   const seek = (frame: number) => playerRef.current?.seekTo(frame);
 
   return (
-    <div className="flex flex-col bg-zinc-900/80 border-t border-white/10">
+    <div className="flex flex-col bg-zinc-900/80 border-t border-white/10 min-w-0">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-white/5 bg-zinc-900/50">
         <span className="text-xs text-white/50">Timeline</span>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setZoom((z) => Math.max(MIN_ZOOM, z / 1.5))}
-            className="p-1 rounded hover:bg-white/10 text-white/50 hover:text-white/80 transition-colors"
-          >
-            <ZoomOut size={14} />
-          </button>
-          <span className="text-xs text-white/40 w-12 text-center">{Math.round(zoom * 100)}%</span>
-          <button
-            onClick={() => setZoom((z) => Math.min(MAX_ZOOM, z * 1.5))}
-            className="p-1 rounded hover:bg-white/10 text-white/50 hover:text-white/80 transition-colors"
-          >
-            <ZoomIn size={14} />
-          </button>
+        <div className="flex items-center gap-3">
+          <ZoomOut size={12} className="text-white/40" />
+          <ZoomSlider zoom={zoom} onZoomChange={setZoom} />
+          <ZoomIn size={12} className="text-white/40" />
+          <span className="text-xs text-white/40 w-10 text-right">{Math.round(zoom * 100)}%</span>
         </div>
       </div>
 
-      {/* Scrollable area */}
-      <div ref={scrollRef} className="overflow-auto" style={{ minHeight: 150, maxHeight: 300 }}>
-        <div className="relative" style={{ width: timelineWidth + TRACK_LABEL_WIDTH }}>
+      {/* Scrollable area - fixed container, content scrolls */}
+      <div ref={scrollRef} className="relative overflow-x-auto overflow-y-auto" style={{ minHeight: 150, maxHeight: 300 }}>
+        <div className="relative inline-block" style={{ minWidth: "100%", width: timelineWidth + TRACK_LABEL_WIDTH }}>
           {/* Ruler */}
           <div className="flex sticky top-0 z-10">
             <div className="w-24 shrink-0 h-8 border-r border-white/10 bg-zinc-900" />
@@ -96,40 +74,94 @@ export function Timeline({
 
           {/* Tracks */}
           <div className="relative">
-            {overlays.length === 0 ? (
-              <div className="flex items-center justify-center h-28 text-white/30 text-sm">
-                Add an overlay to see it here
-              </div>
-            ) : (
-              overlays.map((overlay) => (
-                <Track
-                  key={overlay.id}
-                  overlay={overlay}
-                  totalFrames={totalFrames}
-                  pixelsPerFrame={pixelsPerFrame}
-                  selected={selectedId === overlay.id}
-                  onSelect={() => onSelect(overlay.id)}
-                  onUpdateTiming={(s, e) => onUpdateTiming(overlay.id, s, e)}
-                  onSeek={seek}
-                />
-              ))
-            )}
+            {overlays.map((overlay) => (
+              <Track
+                key={overlay.id}
+                overlay={overlay}
+                totalFrames={totalFrames}
+                pixelsPerFrame={pixelsPerFrame}
+                selected={selectedId === overlay.id}
+                onSelect={() => onSelect(overlay.id)}
+                onUpdateTiming={(s, e) => onUpdateTiming(overlay.id, s, e)}
+                onSeek={seek}
+              />
+            ))}
 
             {/* Playhead */}
-            <div
-              className="absolute top-0 h-full pointer-events-none"
-              style={{ left: TRACK_LABEL_WIDTH, width: timelineWidth }}
-            >
-              <Playhead playerRef={playerRef} pixelsPerFrame={pixelsPerFrame} />
-            </div>
+            {overlays.length > 0 && (
+              <div
+                className="absolute top-0 h-full pointer-events-none"
+                style={{ left: TRACK_LABEL_WIDTH, width: timelineWidth }}
+              >
+                <Playhead playerRef={playerRef} pixelsPerFrame={pixelsPerFrame} />
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Empty state - fixed position overlay */}
+        {overlays.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center text-white/30 text-sm pointer-events-none">
+            Add an overlay to see it here
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
 // --- Sub-components ---
+
+function ZoomSlider({ zoom, onZoomChange }: { zoom: number; onZoomChange: (z: number) => void }) {
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const [dragging, setDragging] = useState(false);
+
+  const zoomToPercent = (z: number) => ((z - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100;
+  const percentToZoom = (p: number) => MIN_ZOOM + (p / 100) * (MAX_ZOOM - MIN_ZOOM);
+
+  const updateZoom = (clientX: number) => {
+    const rect = sliderRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const percent = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
+    onZoomChange(percentToZoom(percent));
+  };
+
+  useEffect(() => {
+    if (!dragging) return;
+    const onMove = (e: MouseEvent) => updateZoom(e.clientX);
+    const onUp = () => setDragging(false);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, [dragging]);
+
+  return (
+    <div
+      ref={sliderRef}
+      className="relative w-24 h-4 cursor-pointer group"
+      onMouseDown={(e) => {
+        setDragging(true);
+        updateZoom(e.clientX);
+      }}
+    >
+      {/* Track */}
+      <div className="absolute top-1/2 -translate-y-1/2 w-full h-1 bg-white/10 rounded-full" />
+      {/* Fill */}
+      <div
+        className="absolute top-1/2 -translate-y-1/2 h-1 bg-white/30 rounded-full"
+        style={{ width: `${zoomToPercent(zoom)}%` }}
+      />
+      {/* Thumb */}
+      <div
+        className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-md transition-transform group-hover:scale-110"
+        style={{ left: `calc(${zoomToPercent(zoom)}% - 6px)` }}
+      />
+    </div>
+  );
+}
 
 const Ruler = memo(function Ruler({
   totalFrames,

@@ -1,4 +1,4 @@
-import { useCurrentFrame, interpolate } from "remotion";
+import { useOverlayOpacity } from "./utils";
 
 interface Props {
   text?: string;
@@ -17,8 +17,7 @@ export function TextOverlay({
   y = 70,
   width = 50,
 }: Props) {
-  const frame = useCurrentFrame();
-  const opacity = interpolate(frame, [0, 20], [0, 1], { extrapolateRight: "clamp" });
+  const opacity = useOverlayOpacity();
 
   if (!text) return null;
 

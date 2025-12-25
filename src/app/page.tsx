@@ -1,43 +1,19 @@
 "use client";
 
 import { Player, PlayerRef } from "@remotion/player";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { Upload } from "lucide-react";
-import { VideoComposition, Overlay, GlassOverlayData, TextOverlayData } from "../remotion/Composition";
+import { VideoComposition, Overlay } from "../remotion/Composition";
 import { DraggableOverlay } from "../components/DraggableOverlay";
 import { Timeline } from "../components/Timeline";
-
-const SAMPLE_VIDEO = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
-const FONTS = ["Open Sans", "Arial", "Georgia", "Courier New", "Impact"];
+import { MediaHandle } from "../components/MediaHandle";
+import { SAMPLE_VIDEO, FONTS, TOTAL_FRAMES, FPS } from "../lib/constants";
+import { createGlass, createText } from "../lib/utils";
 
 const glass = "bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg";
 const glassHover = "hover:bg-white/15 hover:border-white/30";
 const glassInput = `${glass} px-3 py-2 rounded-xl text-sm placeholder:text-white/40 focus:outline-none focus:border-white/40`;
 const glassBtn = `${glass} ${glassHover} px-3 py-1.5 rounded-xl text-sm cursor-pointer transition-all`;
-
-const TOTAL_FRAMES = 900;
-const FPS = 30;
-
-const createGlass = (): GlassOverlayData => ({
-  id: crypto.randomUUID(),
-  type: "glass",
-  mediaSrc: "",
-  mediaX: 10, mediaY: 10, mediaW: 80, mediaH: 80,
-  x: 5, y: 60, w: 20, h: 25,
-  startFrame: 0,
-  endFrame: TOTAL_FRAMES,
-});
-
-const createText = (): TextOverlayData => ({
-  id: crypto.randomUUID(),
-  type: "text",
-  text: "Your text",
-  fontSize: 48,
-  fontFamily: "Open Sans",
-  x: 5, y: 50, w: 50, h: 10,
-  startFrame: 0,
-  endFrame: TOTAL_FRAMES,
-});
 
 export default function Home() {
   const [videoUrl, setVideoUrl] = useState(SAMPLE_VIDEO);
@@ -66,10 +42,11 @@ export default function Home() {
   const selected = overlays.find((o) => o.id === selectedId);
 
   return (
-    <div className="h-screen bg-zinc-950 text-white flex">
-      <div className="w-80 p-4 space-y-4 overflow-y-auto border-r border-white/10">
+    <div className="h-screen bg-zinc-950 text-white flex overflow-hidden">
+      <div className="w-80 shrink-0 p-4 space-y-4 overflow-y-auto border-r border-white/10">
         <h1 className="text-xl font-medium">Overlay</h1>
 
+        <p className="text-sm text-white/50">Base video</p>
         <div className="flex gap-2">
           <input
             value={videoUrl}
@@ -176,10 +153,10 @@ export default function Home() {
         ))}
       </div>
 
-      <div className="flex-1 flex flex-col min-h-0">
+      <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
         {/* Player area */}
-        <div className="flex-1 flex items-center justify-center p-4 min-h-0">
-          <div ref={containerRef} className="relative rounded-2xl overflow-hidden bg-black w-full max-w-5xl shadow-2xl">
+        <div className="flex-1 flex items-start justify-center p-6 pt-8 min-h-0">
+          <div ref={containerRef} className="relative rounded-2xl overflow-hidden bg-black w-full max-w-3xl shadow-2xl">
             <Player
               ref={playerRef}
               component={VideoComposition}
@@ -221,76 +198,6 @@ export default function Home() {
           fps={FPS}
         />
       </div>
-    </div>
-  );
-}
-
-function MediaHandle({
-  overlay,
-  onUpdate,
-  containerRef,
-}: {
-  overlay: GlassOverlayData;
-  onUpdate: (data: Partial<GlassOverlayData>) => void;
-  containerRef: React.RefObject<HTMLDivElement | null>;
-}) {
-  const [mode, setMode] = useState<"move" | "resize" | null>(null);
-  const start = useRef({ x: 0, y: 0, w: 0, h: 0, mx: 0, my: 0 });
-
-  const left = overlay.x + (overlay.mediaX / 100) * overlay.w;
-  const top = overlay.y + (overlay.mediaY / 100) * overlay.h;
-  const width = (overlay.mediaW / 100) * overlay.w;
-  const height = (overlay.mediaH / 100) * overlay.h;
-
-  const begin = (e: React.MouseEvent, m: "move" | "resize") => {
-    e.preventDefault();
-    e.stopPropagation();
-    setMode(m);
-    start.current = { x: overlay.mediaX, y: overlay.mediaY, w: overlay.mediaW, h: overlay.mediaH, mx: e.clientX, my: e.clientY };
-  };
-
-  useEffect(() => {
-    if (!mode) return;
-
-    const onMove = (e: MouseEvent) => {
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect) return;
-
-      const dx = ((e.clientX - start.current.mx) / rect.width) * 100 / overlay.w * 100;
-      const dy = ((e.clientY - start.current.my) / rect.height) * 100 / overlay.h * 100;
-
-      if (mode === "move") {
-        onUpdate({
-          mediaX: Math.max(0, Math.min(100 - overlay.mediaW, start.current.x + dx)),
-          mediaY: Math.max(0, Math.min(100 - overlay.mediaH, start.current.y + dy)),
-        });
-      } else {
-        onUpdate({
-          mediaW: Math.max(10, Math.min(100 - overlay.mediaX, start.current.w + dx)),
-          mediaH: Math.max(10, Math.min(100 - overlay.mediaY, start.current.h + dy)),
-        });
-      }
-    };
-
-    const onUp = () => setMode(null);
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-  }, [mode, overlay, onUpdate, containerRef]);
-
-  return (
-    <div
-      className="absolute rounded-lg cursor-move pointer-events-auto border-2 border-green-500 bg-green-500/10"
-      style={{ left: `${left}%`, top: `${top}%`, width: `${width}%`, height: `${height}%` }}
-      onMouseDown={(e) => begin(e, "move")}
-    >
-      <div
-        className="absolute -bottom-1.5 -right-1.5 w-3 h-3 rounded-full bg-green-500 border-2 border-green-600 cursor-se-resize"
-        onMouseDown={(e) => begin(e, "resize")}
-      />
     </div>
   );
 }
