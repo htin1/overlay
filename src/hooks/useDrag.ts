@@ -2,12 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 
-interface DragState<T extends string> {
-  mode: T | null;
-  startX: number;
-  startY: number;
-}
-
 interface UseDragOptions<T extends string> {
   onDrag: (mode: T, deltaX: number, deltaY: number) => void;
   onDragEnd?: () => void;

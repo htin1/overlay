@@ -34,16 +34,6 @@ export const ANIMATION_LABELS: Record<AnimationType, string> = {
   bounce: "Bounce",
 };
 
-export const ASPECT_RATIOS = {
-  "16:9": { width: 1920, height: 1080, label: "16:9 Landscape" },
-  "9:16": { width: 1080, height: 1920, label: "9:16 Vertical" },
-  "4:3": { width: 1440, height: 1080, label: "4:3 Standard" },
-  "1:1": { width: 1080, height: 1080, label: "1:1 Square" },
-  "21:9": { width: 2560, height: 1080, label: "21:9 Ultrawide" },
-} as const;
-
-export type AspectRatioKey = keyof typeof ASPECT_RATIOS;
-
 // Overlay type colors - used in side panel and timeline
 export const OVERLAY_COLORS = {
   image: {

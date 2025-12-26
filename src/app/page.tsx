@@ -11,10 +11,9 @@ import { OverlayCard } from "../components/OverlayCard";
 import { SAMPLE_VIDEO, TOTAL_FRAMES, FPS } from "../lib/constants";
 import { createImage, createVideo, createText } from "../lib/utils";
 
-const glass = "bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg";
-const glassHover = "hover:bg-white/15 hover:border-white/30";
-const glassInput = `${glass} px-3 py-2 rounded-xl text-sm placeholder:text-white/40 focus:outline-none focus:border-white/40`;
-const glassBtn = `${glass} ${glassHover} px-3 py-1.5 rounded-xl text-sm cursor-pointer transition-all`;
+const input = "bg-white/5 px-4 py-2.5 rounded-lg text-sm placeholder:text-white/30 focus:outline-none focus:bg-white/10 transition-colors";
+const btn = "text-white/40 hover:text-white px-2 py-1 text-xs cursor-pointer transition-colors";
+const btnIcon = "text-white/50 hover:text-white hover:bg-white/5 p-2.5 rounded-lg cursor-pointer transition-all";
 
 export default function Home() {
   const [videoUrl, setVideoUrl] = useState(SAMPLE_VIDEO);
@@ -44,37 +43,41 @@ export default function Home() {
 
   return (
     <div className="h-screen bg-zinc-950 text-white flex overflow-hidden">
-      <div className="w-80 shrink-0 p-4 space-y-4 overflow-y-auto border-r border-white/10">
-        <h1 className="text-xl font-medium">Overlay</h1>
+      <div className="w-80 shrink-0 p-6 space-y-6 overflow-y-auto border-r border-white/5">
+        <h1 className="text-lg text-white/90">Overlay</h1>
 
-        <p className="text-sm text-white/50">Base video</p>
-        <div className="flex gap-2">
-          <input
-            value={videoUrl}
-            onChange={(e) => setVideoUrl(e.target.value)}
-            placeholder="Video URL"
-            className={`flex-1 ${glassInput}`}
-          />
-          <label className={`${glassBtn} flex items-center`}>
-            <Upload size={16} />
+        <div className="space-y-3">
+          <p className="text-xs text-white/40 uppercase tracking-widest">Base video</p>
+          <div className="flex gap-2">
             <input
-              type="file"
-              accept="video/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) setVideoUrl(URL.createObjectURL(file));
-              }}
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              placeholder="Video URL"
+              className={`flex-1 ${input}`}
             />
-          </label>
+            <label className={btnIcon}>
+              <Upload size={16} />
+              <input
+                type="file"
+                accept="video/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) setVideoUrl(URL.createObjectURL(file));
+                }}
+              />
+            </label>
+          </div>
         </div>
 
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-white/50">Overlays</span>
-          <div className="flex gap-1">
-            <button onClick={() => add("image")} className={`${glassBtn} text-xs`}>+ Image</button>
-            <button onClick={() => add("video")} className={`${glassBtn} text-xs`}>+ Video</button>
-            <button onClick={() => add("text")} className={`${glassBtn} text-xs`}>+ Text</button>
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <p className="text-xs text-white/40 uppercase tracking-widest">Overlays</p>
+            <div className="flex gap-1">
+              <button onClick={() => add("image")} className={btn}>+ Image</button>
+              <button onClick={() => add("video")} className={btn}>+ Video</button>
+              <button onClick={() => add("text")} className={btn}>+ Text</button>
+            </div>
           </div>
         </div>
 

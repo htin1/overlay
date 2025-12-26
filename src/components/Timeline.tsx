@@ -38,15 +38,15 @@ export function Timeline({
   const seek = (frame: number) => playerRef.current?.seekTo(frame);
 
   return (
-    <div className="flex flex-col bg-zinc-900/80 border-t border-white/10 min-w-0">
+    <div className="flex flex-col bg-zinc-900/50 border-t border-white/5 min-w-0">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-white/5 bg-zinc-900/50">
-        <span className="text-xs text-white/50">Timeline</span>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
+        <span className="text-xs text-white/30 uppercase tracking-widest">Timeline</span>
         <div className="flex items-center gap-3">
           <ZoomOut size={12} className="text-white/40" />
           <ZoomSlider zoom={zoom} onZoomChange={setZoom} />
           <ZoomIn size={12} className="text-white/40" />
-          <span className="text-xs text-white/40 w-10 text-right">{Math.round(zoom * 100)}%</span>
+          <span className="text-xs text-white/30 w-10 text-right">{Math.round(zoom * 100)}%</span>
         </div>
       </div>
 
@@ -55,7 +55,7 @@ export function Timeline({
         <div className="relative inline-block" style={{ minWidth: "100%", width: timelineWidth + TRACK_LABEL_WIDTH }}>
           {/* Ruler */}
           <div className="flex sticky top-0 z-10">
-            <div className="w-24 shrink-0 h-8 border-r border-white/10 bg-zinc-900" />
+            <div className="w-24 shrink-0 h-8 border-r border-white/5 bg-zinc-900/80" />
             <Ruler totalFrames={totalFrames} fps={fps} pixelsPerFrame={pixelsPerFrame} onSeek={seek} />
           </div>
 
@@ -83,7 +83,7 @@ export function Timeline({
         </div>
 
         {overlays.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center text-white/30 text-sm pointer-events-none">
+          <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm pointer-events-none">
             Add an overlay to see it here
           </div>
         )}
@@ -193,12 +193,12 @@ const Track = memo(function Track({
 
   return (
     <div className="flex border-b border-white/5 hover:bg-white/[0.02]">
-      <div className="w-24 shrink-0 px-3 py-2 flex items-center gap-2 border-r border-white/10 bg-zinc-900/50">
-        <div className={`w-2 h-2 rounded-full ${colors.dot}`} />
-        <span className="text-xs text-white/60 truncate">{label}</span>
+      <div className="w-24 shrink-0 px-3 py-1.5 flex items-center gap-2 border-r border-white/5 bg-zinc-900/30">
+        <div className={`w-1.5 h-1.5 rounded-full ${colors.dot}`} />
+        <span className="text-[10px] text-white/50 truncate">{label}</span>
       </div>
       <div
-        className="relative h-14 flex-1"
+        className="relative h-8 flex-1"
         style={{ width: totalFrames * pixelsPerFrame }}
         onClick={(e) => e.target === e.currentTarget && onSeek(clickToFrame(e, pixelsPerFrame, totalFrames))}
       >
@@ -264,17 +264,17 @@ const Clip = memo(function Clip({
 
   return (
     <div
-      className={`absolute top-1 bottom-1 rounded-md border cursor-move ${colors.clip} ${selected ? "ring-2 ring-white/50" : ""}`}
+      className={`absolute top-1 bottom-1 rounded border cursor-move ${colors.clip} ${selected ? "ring-1 ring-white/50" : ""}`}
       style={{ left, width }}
       onMouseDown={(e) => handleMouseDown(e, "move")}
     >
-      <div className="absolute left-0 top-0 w-2 h-full cursor-ew-resize hover:bg-white/20 rounded-l-md" onMouseDown={(e) => handleMouseDown(e, "left")} />
-      <div className="absolute inset-0 flex items-center justify-center px-3">
-        <span className="text-xs text-white/80 truncate select-none">
+      <div className="absolute left-0 top-0 w-1.5 h-full cursor-ew-resize hover:bg-white/20 rounded-l" onMouseDown={(e) => handleMouseDown(e, "left")} />
+      <div className="absolute inset-0 flex items-center justify-center px-2">
+        <span className="text-[10px] text-white/70 truncate select-none">
           {overlay.type === "text" ? (overlay as TextOverlayData).text?.slice(0, 20) : overlay.type.charAt(0).toUpperCase() + overlay.type.slice(1)}
         </span>
       </div>
-      <div className="absolute right-0 top-0 w-2 h-full cursor-ew-resize hover:bg-white/20 rounded-r-md" onMouseDown={(e) => handleMouseDown(e, "right")} />
+      <div className="absolute right-0 top-0 w-1.5 h-full cursor-ew-resize hover:bg-white/20 rounded-r" onMouseDown={(e) => handleMouseDown(e, "right")} />
     </div>
   );
 });
