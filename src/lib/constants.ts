@@ -1,9 +1,9 @@
-import type { AnimationType } from "@/remotion/Composition";
+import type { AnimationType } from "@/overlays/base";
 
 export const TOTAL_FRAMES = 900;
 export const FPS = 30;
 export const SAMPLE_VIDEO = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
-export const FONTS = ["Open Sans", "Arial", "Georgia", "Courier New", "Impact"];
+export const FONTS = ["Inter", "Open Sans", "JetBrains Mono", "Arial", "Georgia", "Courier New", "Impact"];
 
 // Timeline configuration
 export const TIMELINE_CONFIG = {
@@ -56,6 +56,27 @@ export const OVERLAY_COLORS = {
     cardSelected: "bg-amber-500/20 border-amber-500/50",
     dot: "bg-amber-500",
     clip: "bg-amber-500/40 border-amber-500/60 hover:bg-amber-500/50",
+  },
+  "typing-text": {
+    badge: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+    card: "bg-emerald-500/10 border-emerald-500/30",
+    cardSelected: "bg-emerald-500/20 border-emerald-500/50",
+    dot: "bg-emerald-500",
+    clip: "bg-emerald-500/40 border-emerald-500/60 hover:bg-emerald-500/50",
+  },
+  notification: {
+    badge: "bg-pink-500/20 text-pink-300 border-pink-500/30",
+    card: "bg-pink-500/10 border-pink-500/30",
+    cardSelected: "bg-pink-500/20 border-pink-500/50",
+    dot: "bg-pink-500",
+    clip: "bg-pink-500/40 border-pink-500/60 hover:bg-pink-500/50",
+  },
+  chat: {
+    badge: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
+    card: "bg-cyan-500/10 border-cyan-500/30",
+    cardSelected: "bg-cyan-500/20 border-cyan-500/50",
+    dot: "bg-cyan-500",
+    clip: "bg-cyan-500/40 border-cyan-500/60 hover:bg-cyan-500/50",
   },
 } as const;
 

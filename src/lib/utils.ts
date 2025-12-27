@@ -1,11 +1,7 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
-import type { MediaOverlayData, TextOverlayData } from "@/remotion/Composition"
-import { TOTAL_FRAMES } from "./constants"
+import { overlayRegistry } from "@/overlays/registry"
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
-}
+// Re-export cn for backwards compatibility
+export { cn } from "./cn"
 
 // Format seconds to M:SS
 export function formatTime(seconds: number): string {
@@ -21,39 +17,14 @@ export function clickToFrame(e: React.MouseEvent, pixelsPerFrame: number, totalF
   return Math.max(0, Math.min(totalFrames - 1, Math.round(x / pixelsPerFrame)));
 }
 
-// Create default media overlay (image or video)
-export function createMedia(type: "image" | "video"): MediaOverlayData {
-  return {
-    id: crypto.randomUUID(),
-    type,
-    src: "",
-    x: 5, y: 60, w: 20, h: 25,
-    mediaX: 10, mediaY: 10, mediaW: 80, mediaH: 80,
-    startFrame: 0,
-    endFrame: TOTAL_FRAMES,
-    enterAnimation: "fade",
-    exitAnimation: "none",
-    glass: false,
-  };
-}
+// Factory functions - delegate to registry
+export const createImage = overlayRegistry.image.create;
+export const createVideo = overlayRegistry.video.create;
+export const createText = overlayRegistry.text.create;
+export const createTypingText = overlayRegistry["typing-text"].create;
+export const createNotification = overlayRegistry.notification.create;
+export const createChat = overlayRegistry.chat.create;
 
-// Convenience aliases
-export const createImage = () => createMedia("image");
-export const createVideo = () => createMedia("video");
-
-// Create default text overlay
-export function createText(): TextOverlayData {
-  return {
-    id: crypto.randomUUID(),
-    type: "text",
-    text: "Your text",
-    fontSize: 48,
-    fontFamily: "Open Sans",
-    x: 5, y: 50, w: 50, h: 10,
-    startFrame: 0,
-    endFrame: TOTAL_FRAMES,
-    enterAnimation: "fade",
-    exitAnimation: "none",
-    glass: false,
-  };
-}
+// Convenience alias
+export const createMedia = (type: "image" | "video") =>
+  type === "image" ? createImage() : createVideo();

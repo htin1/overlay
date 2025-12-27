@@ -1,6 +1,5 @@
-import { Img, OffthreadVideo } from "remotion";
 import { useOverlayAnimation } from "./utils";
-import type { Overlay, MediaOverlayData, TextOverlayData } from "./Composition";
+import { getOverlayDefinition, type Overlay, type BaseOverlay } from "@/overlays/registry";
 
 interface Props {
   overlay: Overlay;
@@ -23,6 +22,12 @@ export function OverlayItem({ overlay, durationInFrames }: Props) {
     durationInFrames
   );
 
+  const definition = getOverlayDefinition(overlay.type);
+  if (!definition) return null;
+
+  const isTextType = overlay.type === "text";
+  const isTypingText = overlay.type === "typing-text";
+
   const baseStyle: React.CSSProperties = {
     position: "absolute",
     left: `${overlay.x}%`,
@@ -33,63 +38,15 @@ export function OverlayItem({ overlay, durationInFrames }: Props) {
     transform,
     overflow: "hidden",
     ...(overlay.glass ? glassStyle : {}),
+    // Text overlay needs flex centering
+    ...(isTextType ? { display: "flex", alignItems: "center", justifyContent: "center" } : {}),
+    // Typing text needs transparent background (has its own window chrome)
+    ...(isTypingText ? { background: "transparent", border: "none", backdropFilter: "none" } : {}),
   };
 
-  // For image/video with glass: position media inside the glass container
-  // Without glass: media fills the entire overlay
-  const getMediaStyle = (o: MediaOverlayData): React.CSSProperties => {
-    if (o.glass) {
-      return {
-        position: "absolute",
-        left: `${o.mediaX}%`,
-        top: `${o.mediaY}%`,
-        width: `${o.mediaW}%`,
-        height: `${o.mediaH}%`,
-        objectFit: "cover",
-        borderRadius: 12,
-      };
-    }
-    return {
-      width: "100%",
-      height: "100%",
-      objectFit: "cover",
-    };
-  };
-
-  if (overlay.type === "image") {
-    return (
-      <div style={baseStyle}>
-        {overlay.src && <Img src={overlay.src} style={getMediaStyle(overlay)} />}
-      </div>
-    );
-  }
-
-  if (overlay.type === "video") {
-    return (
-      <div style={baseStyle}>
-        {overlay.src && <OffthreadVideo src={overlay.src} style={getMediaStyle(overlay)} />}
-      </div>
-    );
-  }
-
-  // Text overlay
-  const text = overlay as TextOverlayData;
   return (
-    <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <p
-        style={{
-          color: "white",
-          fontSize: text.fontSize,
-          fontFamily: text.fontFamily,
-          fontWeight: 600,
-          textShadow: text.glass ? "none" : "0 2px 8px rgba(0, 0, 0, 0.5)",
-          margin: 0,
-          lineHeight: 1.2,
-          padding: text.glass ? 16 : 0,
-        }}
-      >
-        {text.text}
-      </p>
+    <div style={baseStyle}>
+      {definition.render({ overlay: overlay as BaseOverlay, durationInFrames })}
     </div>
   );
 }

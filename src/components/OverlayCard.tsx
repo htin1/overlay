@@ -1,12 +1,11 @@
 "use client";
 
-import { Upload } from "lucide-react";
 import { Toggle } from "./ui/toggle";
-import { ANIMATION_TYPES, AnimationType, Overlay, isMediaOverlay, isTextOverlay } from "@/remotion/Composition";
-import { FONTS, OVERLAY_COLORS, ANIMATION_LABELS } from "@/lib/constants";
+import { getOverlayDefinition, type Overlay, type BaseOverlay } from "@/overlays/registry";
+import { ANIMATION_TYPES, type AnimationType } from "@/overlays/base";
+import { ANIMATION_LABELS } from "@/lib/constants";
 
 const input = "bg-white/5 px-3 py-2 rounded-lg text-sm placeholder:text-white/30 focus:outline-none focus:bg-white/10 transition-colors";
-const btnIcon = "text-white/40 hover:text-white hover:bg-white/5 p-2 rounded-lg cursor-pointer transition-all";
 
 interface Props {
   overlay: Overlay;
@@ -17,7 +16,7 @@ interface Props {
 }
 
 export function OverlayCard({ overlay, selected, onSelect, onUpdate, onRemove }: Props) {
-  const colors = OVERLAY_COLORS[overlay.type];
+  const definition = getOverlayDefinition(overlay.type);
 
   return (
     <div
@@ -28,9 +27,7 @@ export function OverlayCard({ overlay, selected, onSelect, onUpdate, onRemove }:
     >
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <span className={`text-xs text-white/50 capitalize`}>
-            {overlay.type}
-          </span>
+          <span className="text-xs text-white/50 capitalize">{overlay.type}</span>
           <Toggle
             size="sm"
             pressed={overlay.glass || false}
@@ -49,60 +46,13 @@ export function OverlayCard({ overlay, selected, onSelect, onUpdate, onRemove }:
         </button>
       </div>
 
-      {isMediaOverlay(overlay) && (
-        <div className="flex gap-2">
-          <input
-            value={overlay.src}
-            onChange={(e) => onUpdate({ src: e.target.value })}
-            onClick={(e) => e.stopPropagation()}
-            placeholder={`${overlay.type === "image" ? "Image" : "Video"} URL`}
-            className={`flex-1 ${input}`}
-          />
-          <label className={btnIcon}>
-            <Upload size={14} />
-            <input
-              type="file"
-              accept={overlay.type === "image" ? "image/*" : "video/*"}
-              className="hidden"
-              onClick={(e) => e.stopPropagation()}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) onUpdate({ src: URL.createObjectURL(file) });
-              }}
-            />
-          </label>
-        </div>
-      )}
+      {/* Type-specific editor from registry */}
+      {definition?.editor({
+        overlay: overlay as BaseOverlay,
+        onUpdate: onUpdate as (data: Partial<BaseOverlay>) => void,
+      })}
 
-      {isTextOverlay(overlay) && (
-        <div className="space-y-3">
-          <input
-            value={overlay.text}
-            onChange={(e) => onUpdate({ text: e.target.value })}
-            onClick={(e) => e.stopPropagation()}
-            placeholder="Text"
-            className={`w-full ${input}`}
-          />
-          <div className="flex items-center gap-3 text-xs text-white/40">
-            <span className="w-10">{overlay.fontSize}</span>
-            <input
-              type="range" min={16} max={120} value={overlay.fontSize}
-              onChange={(e) => onUpdate({ fontSize: +e.target.value })}
-              onClick={(e) => e.stopPropagation()}
-              className="flex-1 accent-white/30"
-            />
-          </div>
-          <select
-            value={overlay.fontFamily}
-            onChange={(e) => onUpdate({ fontFamily: e.target.value })}
-            onClick={(e) => e.stopPropagation()}
-            className={`w-full ${input}`}
-          >
-            {FONTS.map((f) => <option key={f} value={f} className="bg-zinc-900">{f}</option>)}
-          </select>
-        </div>
-      )}
-
+      {/* Animation controls */}
       <div className="flex gap-3">
         <div className="flex-1 space-y-1.5">
           <span className="text-[10px] text-white/30 uppercase tracking-widest">Enter</span>

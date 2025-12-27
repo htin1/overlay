@@ -2,7 +2,7 @@
 
 import React, { useRef, useCallback, memo, useState } from "react";
 import { PlayerRef } from "@remotion/player";
-import type { Overlay, TextOverlayData } from "@/remotion/Composition";
+import type { Overlay, TextOverlayData } from "@/overlays/registry";
 import { usePlayerFrame } from "../hooks/usePlayerFrame";
 import { useDrag } from "../hooks/useDrag";
 import { ZoomIn, ZoomOut } from "lucide-react";
