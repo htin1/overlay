@@ -1,8 +1,8 @@
 "use client";
 
 import { Toggle } from "./ui/toggle";
-import { getOverlayDefinition, type Overlay, type BaseOverlay } from "@/overlays/registry";
-import { ANIMATION_TYPES, type AnimationType } from "@/overlays/base";
+import { getOverlayDefinition, type Overlay, type BaseOverlay } from "@/lib/overlays/registry";
+import { ANIMATION_TYPES, type AnimationType } from "@/lib/overlays/base";
 import { ANIMATION_LABELS } from "@/lib/constants";
 
 const input = "bg-white/5 px-3 py-2 rounded-lg text-sm placeholder:text-white/30 focus:outline-none focus:bg-white/10 transition-colors";

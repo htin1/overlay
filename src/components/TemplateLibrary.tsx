@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Terminal, Type, Bell, MessageCircle } from "lucide-react";
 import { templateCategories, getTemplatesByCategory, type Template } from "@/lib/templates";
-import type { Overlay } from "@/overlays/registry";
+import type { Overlay } from "@/lib/overlays/registry";
 
 interface Props {
   onSelect: (overlay: Overlay) => void;

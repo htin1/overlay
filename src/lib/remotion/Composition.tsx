@@ -1,6 +1,6 @@
 import { AbsoluteFill, Video, Sequence } from "remotion";
 import { OverlayItem } from "./OverlayItem";
-import type { Overlay } from "@/overlays/registry";
+import type { Overlay } from "@/lib/overlays/registry";
 
 export interface CompositionProps {
   videoSrc?: string;

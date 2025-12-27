@@ -1,5 +1,5 @@
 import { useOverlayAnimation } from "./utils";
-import { getOverlayDefinition, type Overlay, type BaseOverlay } from "@/overlays/registry";
+import { getOverlayDefinition, type Overlay, type BaseOverlay } from "@/lib/overlays/registry";
 
 interface Props {
   overlay: Overlay;

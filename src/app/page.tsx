@@ -3,8 +3,8 @@
 import { Player, PlayerRef } from "@remotion/player";
 import { useState, useRef, useEffect } from "react";
 import { Upload, Plus, Image, Film, Type } from "lucide-react";
-import { VideoComposition } from "../remotion/Composition";
-import { type Overlay, isMediaOverlay } from "@/overlays/registry";
+import { VideoComposition } from "../lib/remotion/Composition";
+import { type Overlay, isMediaOverlay } from "@/lib/overlays/registry";
 import { DraggableOverlay } from "../components/DraggableOverlay";
 import { Timeline } from "../components/Timeline";
 import { MediaHandle } from "../components/MediaHandle";

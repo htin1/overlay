@@ -1,4 +1,4 @@
-import type { AnimationType } from "@/overlays/base";
+import type { AnimationType } from "@/lib/overlays/base";
 
 export const TOTAL_FRAMES = 900;
 export const FPS = 30;

@@ -1,4 +1,4 @@
-import type { Overlay } from "@/overlays/registry";
+import type { Overlay } from "@/lib/overlays/registry";
 import { createTypingText, createNotification, createChat } from "./utils";
 
 export interface Template {

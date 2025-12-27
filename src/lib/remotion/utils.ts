@@ -1,5 +1,5 @@
 import { useCurrentFrame, useVideoConfig, interpolate, spring } from "remotion";
-import type { AnimationType } from "@/overlays/base";
+import type { AnimationType } from "@/lib/overlays/base";
 
 const ANIM_DURATION = 20;
 

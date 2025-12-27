@@ -1,4 +1,4 @@
-import { overlayRegistry } from "@/overlays/registry"
+import { overlayRegistry } from "@/lib/overlays/registry"
 
 // Re-export cn for backwards compatibility
 export { cn } from "./cn"
