@@ -11,7 +11,11 @@ export function VideoComposition({ videoSrc, overlays = [] }: CompositionProps) 
   return (
     <AbsoluteFill style={{ backgroundColor: "black" }}>
       {videoSrc && (
-        <Video src={videoSrc} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+        <Video
+          src={videoSrc}
+          style={{ width: "100%", height: "100%", objectFit: "contain" }}
+          pauseWhenBuffering
+        />
       )}
       {overlays.map((overlay) => {
         const duration = overlay.endFrame - overlay.startFrame;
