@@ -25,6 +25,3 @@ export const createTypingText = overlayRegistry["typing-text"].create;
 export const createNotification = overlayRegistry.notification.create;
 export const createChat = overlayRegistry.chat.create;
 
-// Convenience alias
-export const createMedia = (type: "image" | "video") =>
-  type === "image" ? createImage() : createVideo();

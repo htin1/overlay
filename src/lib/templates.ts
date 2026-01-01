@@ -61,12 +61,3 @@ export const templates: Template[] = [
   },
 ];
 
-export const templateCategories = [
-  { id: "text", name: "Text Effects", icon: "type" },
-  { id: "notification", name: "Notifications", icon: "bell" },
-  { id: "chat", name: "Conversations", icon: "messages" },
-] as const;
-
-export function getTemplatesByCategory(category: string): Template[] {
-  return templates.filter((t) => t.category === category);
-}
