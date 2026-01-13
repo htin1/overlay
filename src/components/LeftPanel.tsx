@@ -80,11 +80,14 @@ export function LeftPanel({
     }
   };
 
-  const handleFileUpload = useCallback((files: FileList | null) => {
+  const handleFileUpload = useCallback(async (files: FileList | null) => {
     if (!files) return;
-    Array.from(files).forEach((file) => {
+    for (const file of Array.from(files)) {
       if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
-        const url = URL.createObjectURL(file);
+        const formData = new FormData();
+        formData.append("file", file);
+        const res = await fetch("/api/media", { method: "POST", body: formData });
+        const { url } = await res.json();
         onAddMedia({
           id: crypto.randomUUID(),
           name: file.name,
@@ -92,7 +95,7 @@ export function LeftPanel({
           type: file.type.startsWith("video/") ? "video" : "image",
         });
       }
-    });
+    }
   }, [onAddMedia]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -101,7 +104,7 @@ export function LeftPanel({
     handleFileUpload(e.dataTransfer.files);
   }, [handleFileUpload]);
 
-  const handlePaste = useCallback((e: ClipboardEvent) => {
+  const handlePaste = useCallback(async (e: ClipboardEvent) => {
     if (activeTab !== "media") return;
     const items = e.clipboardData?.items;
     if (!items) return;
@@ -110,7 +113,10 @@ export function LeftPanel({
       if (item.type.startsWith("image/") || item.type.startsWith("video/")) {
         const file = item.getAsFile();
         if (file) {
-          const url = URL.createObjectURL(file);
+          const formData = new FormData();
+          formData.append("file", new File([file], file.name || "pasted-media", { type: file.type }));
+          const res = await fetch("/api/media", { method: "POST", body: formData });
+          const { url } = await res.json();
           onAddMedia({
             id: crypto.randomUUID(),
             name: file.name || "pasted-media",

@@ -79,8 +79,8 @@ export function RightPanel({ overlay, onUpdate, onRemove, media = [] }: Props) {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md transition-colors ${
                   activeTab === tab.id
-                    ? "bg-zinc-200 dark:bg-white/15 text-zinc-900 dark:text-white"
-                    : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                    ? "border border-indigo-500 text-zinc-900 dark:text-white"
+                    : "border border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
                 }`}
               >
                 {tab.icon}
