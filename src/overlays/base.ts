@@ -61,6 +61,7 @@ export interface BaseOverlay {
   enterAnimation?: AnimationType;
   exitAnimation?: AnimationType;
   glass?: boolean;
+  visible?: boolean; // defaults to true if undefined
 }
 
 export interface OverlayDefinition<T extends BaseOverlay = BaseOverlay> {

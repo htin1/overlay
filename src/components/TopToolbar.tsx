@@ -1,53 +1,36 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Plus, Image, Film, Type, Download, Loader2, Upload, LayoutTemplate, X } from "lucide-react";
-import { TemplateLibrary } from "./TemplateLibrary";
-import type { Overlay } from "@/lib/overlays/registry";
+import { Undo2, Redo2, Download, Loader2, ChevronDown, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
 
 interface Props {
-  videoUrl: string;
-  onVideoUrlChange: (url: string) => void;
-  onAddOverlay: (type: "image" | "video" | "text") => void;
-  onAddFromTemplate: (overlay: Overlay) => void;
   onExport: () => void;
   exportStatus: { active: boolean; message: string; progress?: number };
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
 }
 
-const btnIcon = "text-white/50 hover:text-white hover:bg-white/10 p-2 rounded-lg cursor-pointer transition-all";
-
-function getDisplayName(url: string): string {
-  if (!url) return "No video";
-  try {
-    const urlObj = new URL(url);
-    const path = urlObj.pathname;
-    const filename = path.split("/").pop() || urlObj.hostname;
-    return filename.length > 30 ? filename.slice(0, 27) + "..." : filename;
-  } catch {
-    return url.length > 30 ? url.slice(0, 27) + "..." : url;
-  }
-}
+const btnIcon = "text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/10 p-2 rounded-lg cursor-pointer transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-zinc-400";
 
 export function TopToolbar({
-  videoUrl,
-  onVideoUrlChange,
-  onAddOverlay,
-  onAddFromTemplate,
   onExport,
   exportStatus,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
 }: Props) {
-  const [addMenuOpen, setAddMenuOpen] = useState(false);
-  const [templatesOpen, setTemplatesOpen] = useState(false);
-  const addMenuRef = useRef<HTMLDivElement>(null);
-  const templatesRef = useRef<HTMLDivElement>(null);
+  const { theme, toggleTheme } = useTheme();
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) {
-        setAddMenuOpen(false);
-      }
-      if (templatesRef.current && !templatesRef.current.contains(e.target as Node)) {
-        setTemplatesOpen(false);
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setExportMenuOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -55,89 +38,65 @@ export function TopToolbar({
   }, []);
 
   return (
-    <div className="h-12 border-b border-white/5 flex items-center justify-between px-4 bg-zinc-900/50">
-      {/* Left: Video URL display */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-white/50">{getDisplayName(videoUrl)}</span>
-        <label className={btnIcon}>
-          <Upload size={14} />
-          <input
-            type="file"
-            accept="video/*"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) onVideoUrlChange(URL.createObjectURL(file));
-            }}
-          />
-        </label>
+    <div className="h-12 border-b border-zinc-200 dark:border-white/5 flex items-center justify-between px-4 bg-zinc-50 dark:bg-zinc-900/50">
+      {/* Left: Undo/Redo */}
+      <div className="flex items-center gap-1">
+        <button
+          onClick={onUndo}
+          disabled={!canUndo}
+          className={btnIcon}
+          title="Undo"
+        >
+          <Undo2 size={16} />
+        </button>
+        <button
+          onClick={onRedo}
+          disabled={!canRedo}
+          className={btnIcon}
+          title="Redo"
+        >
+          <Redo2 size={16} />
+        </button>
       </div>
 
-      {/* Right: Add + Templates + Export */}
-      <div className="flex items-center gap-1">
-        <div className="relative" ref={addMenuRef}>
-          <button
-            onClick={() => setAddMenuOpen(!addMenuOpen)}
-            className={btnIcon}
-            title="Add overlay"
-          >
-            <Plus size={16} />
-          </button>
-          {addMenuOpen && (
-            <div className="absolute right-0 top-full mt-1 bg-zinc-900 border border-white/10 rounded-lg py-1 min-w-[100px] shadow-xl z-50">
-              <button
-                onClick={() => { onAddOverlay("image"); setAddMenuOpen(false); }}
-                className="w-full px-3 py-1.5 text-left text-sm text-white/60 hover:text-white hover:bg-white/5 flex items-center gap-2 transition-colors"
-              >
-                <Image size={12} /> Image
-              </button>
-              <button
-                onClick={() => { onAddOverlay("video"); setAddMenuOpen(false); }}
-                className="w-full px-3 py-1.5 text-left text-sm text-white/60 hover:text-white hover:bg-white/5 flex items-center gap-2 transition-colors"
-              >
-                <Film size={12} /> Video
-              </button>
-              <button
-                onClick={() => { onAddOverlay("text"); setAddMenuOpen(false); }}
-                className="w-full px-3 py-1.5 text-left text-sm text-white/60 hover:text-white hover:bg-white/5 flex items-center gap-2 transition-colors"
-              >
-                <Type size={12} /> Text
-              </button>
-            </div>
-          )}
-        </div>
+      {/* Center: Title */}
+      <span className="text-sm text-zinc-400">Overlay Editor</span>
 
-        <div className="relative" ref={templatesRef}>
-          <button
-            onClick={() => setTemplatesOpen(!templatesOpen)}
-            className={btnIcon}
-            title="Templates"
-          >
-            <LayoutTemplate size={16} />
-          </button>
-          {templatesOpen && (
-            <div className="absolute right-0 top-full mt-1 bg-zinc-900 border border-white/10 rounded-xl shadow-xl z-50 w-64 max-h-80 overflow-y-auto">
-              <div className="sticky top-0 bg-zinc-900 border-b border-white/5 px-3 py-2 flex items-center justify-between">
-                <span className="text-xs text-white/50">Templates</span>
-                <button onClick={() => setTemplatesOpen(false)} className="text-white/30 hover:text-white/60">
-                  <X size={12} />
-                </button>
-              </div>
-              <div className="p-2">
-                <TemplateLibrary onSelect={(o) => { onAddFromTemplate(o); setTemplatesOpen(false); }} />
-              </div>
-            </div>
-          )}
-        </div>
-
+      {/* Right: Theme toggle + Export */}
+      <div className="flex items-center gap-2">
         <button
-          onClick={onExport}
-          disabled={exportStatus.active}
+          onClick={toggleTheme}
           className={btnIcon}
-          title="Export"
+          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
         >
-          {exportStatus.active ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+          {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
         </button>
+        <div className="relative" ref={exportMenuRef}>
+          <button
+            onClick={() => setExportMenuOpen(!exportMenuOpen)}
+            disabled={exportStatus.active}
+            className={`${btnIcon} flex items-center gap-1`}
+            title="Export"
+          >
+            {exportStatus.active ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Download size={16} />
+            )}
+            <span className="text-sm">Export</span>
+            <ChevronDown size={12} />
+          </button>
+          {exportMenuOpen && !exportStatus.active && (
+            <div className="absolute right-0 top-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 rounded-lg py-1 min-w-[140px] shadow-lg z-50">
+              <button
+                onClick={() => { onExport(); setExportMenuOpen(false); }}
+                className="w-full px-3 py-1.5 text-left text-sm text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors"
+              >
+                Export MP4
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

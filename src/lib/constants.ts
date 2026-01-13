@@ -1,4 +1,4 @@
-import type { AnimationType } from "@/lib/overlays/base";
+import type { AnimationType } from "@/overlays/base";
 
 export const TOTAL_FRAMES = 900;
 export const FPS = 30;
@@ -36,13 +36,9 @@ export const ANIMATION_LABELS: Record<AnimationType, string> = {
 
 // Overlay type colors - used in timeline
 export const OVERLAY_COLORS = {
-  image: {
+  media: {
     dot: "bg-purple-500",
     clip: "bg-purple-500/40 border-purple-500/60 hover:bg-purple-500/50",
-  },
-  video: {
-    dot: "bg-blue-500",
-    clip: "bg-blue-500/40 border-blue-500/60 hover:bg-blue-500/50",
   },
   text: {
     dot: "bg-amber-500",

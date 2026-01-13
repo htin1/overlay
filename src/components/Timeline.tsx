@@ -2,7 +2,7 @@
 
 import React, { useRef, useCallback, memo, useState } from "react";
 import { PlayerRef } from "@remotion/player";
-import type { Overlay, TextOverlayData } from "@/lib/overlays/registry";
+import type { Overlay, TextOverlayData } from "@/overlays/registry";
 import { usePlayerFrame } from "../hooks/usePlayerFrame";
 import { useDrag } from "../hooks/useDrag";
 import { ZoomIn, ZoomOut } from "lucide-react";
@@ -38,15 +38,15 @@ export function Timeline({
   const seek = (frame: number) => playerRef.current?.seekTo(frame);
 
   return (
-    <div className="flex flex-col bg-zinc-900/50 border-t border-white/5 min-w-0">
+    <div className="flex flex-col bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-200 dark:border-white/5 min-w-0">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
-        <span className="text-xs text-white/30 uppercase tracking-widest">Timeline</span>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-white/5">
+        <span className="text-xs text-zinc-500 uppercase tracking-widest">Timeline</span>
         <div className="flex items-center gap-3">
-          <ZoomOut size={12} className="text-white/40" />
+          <ZoomOut size={12} className="text-zinc-400" />
           <ZoomSlider zoom={zoom} onZoomChange={setZoom} />
-          <ZoomIn size={12} className="text-white/40" />
-          <span className="text-xs text-white/30 w-10 text-right">{Math.round(zoom * 100)}%</span>
+          <ZoomIn size={12} className="text-zinc-400" />
+          <span className="text-xs text-zinc-500 w-10 text-right">{Math.round(zoom * 100)}%</span>
         </div>
       </div>
 
@@ -55,7 +55,7 @@ export function Timeline({
         <div className="relative inline-block" style={{ minWidth: "100%", width: timelineWidth + TRACK_LABEL_WIDTH }}>
           {/* Ruler */}
           <div className="flex sticky top-0 z-10">
-            <div className="w-24 shrink-0 h-8 border-r border-white/5 bg-zinc-900/80" />
+            <div className="w-24 shrink-0 h-8 border-r border-zinc-200 dark:border-white/5 bg-zinc-100 dark:bg-zinc-900/80" />
             <Ruler totalFrames={totalFrames} fps={fps} pixelsPerFrame={pixelsPerFrame} onSeek={seek} />
           </div>
 
@@ -83,7 +83,7 @@ export function Timeline({
         </div>
 
         {overlays.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm pointer-events-none">
+          <div className="absolute inset-0 flex items-center justify-center text-zinc-400 text-sm pointer-events-none">
             Add an overlay to see it here
           </div>
         )}
@@ -128,9 +128,9 @@ function ZoomSlider({ zoom, onZoomChange }: { zoom: number; onZoomChange: (z: nu
         startDrag(e, "slide");
       }}
     >
-      <div className="absolute top-1/2 -translate-y-1/2 w-full h-1 bg-white/10 rounded-full" />
-      <div className="absolute top-1/2 -translate-y-1/2 h-1 bg-white/30 rounded-full" style={{ width: `${zoomToPercent(zoom)}%` }} />
-      <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-md transition-transform group-hover:scale-110" style={{ left: `calc(${zoomToPercent(zoom)}% - 6px)` }} />
+      <div className="absolute top-1/2 -translate-y-1/2 w-full h-1 bg-zinc-300 dark:bg-white/10 rounded-full" />
+      <div className="absolute top-1/2 -translate-y-1/2 h-1 bg-zinc-500 dark:bg-white/30 rounded-full" style={{ width: `${zoomToPercent(zoom)}%` }} />
+      <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-zinc-700 dark:bg-white rounded-full shadow-md transition-transform group-hover:scale-110" style={{ left: `calc(${zoomToPercent(zoom)}% - 6px)` }} />
     </div>
   );
 }
@@ -155,14 +155,14 @@ const Ruler = memo(function Ruler({
 
   return (
     <div
-      className="relative h-8 bg-zinc-800/50 border-b border-white/5 cursor-pointer flex-1"
+      className="relative h-8 bg-zinc-100 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-white/5 cursor-pointer flex-1"
       style={{ width: totalFrames * pixelsPerFrame }}
       onClick={(e) => onSeek(clickToFrame(e, pixelsPerFrame, totalFrames))}
     >
       {marks.map(({ frame, label, major }) => (
         <div key={frame} className="absolute top-0 flex flex-col items-center" style={{ left: frame * pixelsPerFrame }}>
-          <div className={`w-px ${major ? "h-5 bg-white/40" : "h-2.5 bg-white/20"}`} />
-          {major && <span className="text-[11px] text-white/50 mt-0.5 select-none">{label}</span>}
+          <div className={`w-px ${major ? "h-5 bg-zinc-400 dark:bg-white/40" : "h-2.5 bg-zinc-300 dark:bg-white/20"}`} />
+          {major && <span className="text-[11px] text-zinc-500 dark:text-white/50 mt-0.5 select-none">{label}</span>}
         </div>
       ))}
     </div>
@@ -192,10 +192,10 @@ const Track = memo(function Track({
     : overlay.type.charAt(0).toUpperCase() + overlay.type.slice(1);
 
   return (
-    <div className="flex border-b border-white/5 hover:bg-white/[0.02]">
-      <div className="w-24 shrink-0 px-3 py-1.5 flex items-center gap-2 border-r border-white/5 bg-zinc-900/30">
+    <div className="flex border-b border-zinc-200 dark:border-white/5 hover:bg-zinc-100/50 dark:hover:bg-white/[0.02]">
+      <div className="w-24 shrink-0 px-3 py-1.5 flex items-center gap-2 border-r border-zinc-200 dark:border-white/5 bg-zinc-100 dark:bg-zinc-900/30">
         <div className={`w-1.5 h-1.5 rounded-full ${colors.dot}`} />
-        <span className="text-[10px] text-white/50 truncate">{label}</span>
+        <span className="text-[10px] text-zinc-500 dark:text-white/50 truncate">{label}</span>
       </div>
       <div
         className="relative h-8 flex-1"
@@ -264,17 +264,17 @@ const Clip = memo(function Clip({
 
   return (
     <div
-      className={`absolute top-1 bottom-1 rounded border cursor-move ${colors.clip} ${selected ? "ring-1 ring-white/50" : ""}`}
+      className={`absolute top-1 bottom-1 rounded border cursor-move ${colors.clip} ${selected ? "ring-1 ring-zinc-400 dark:ring-white/50" : ""}`}
       style={{ left, width }}
       onMouseDown={(e) => handleMouseDown(e, "move")}
     >
-      <div className="absolute left-0 top-0 w-1.5 h-full cursor-ew-resize hover:bg-white/20 rounded-l" onMouseDown={(e) => handleMouseDown(e, "left")} />
+      <div className="absolute left-0 top-0 w-1.5 h-full cursor-ew-resize hover:bg-black/10 dark:hover:bg-white/20 rounded-l" onMouseDown={(e) => handleMouseDown(e, "left")} />
       <div className="absolute inset-0 flex items-center justify-center px-2">
-        <span className="text-[10px] text-white/70 truncate select-none">
+        <span className="text-[10px] text-zinc-700 dark:text-white/70 truncate select-none">
           {overlay.type === "text" ? (overlay as TextOverlayData).text?.slice(0, 20) : overlay.type.charAt(0).toUpperCase() + overlay.type.slice(1)}
         </span>
       </div>
-      <div className="absolute right-0 top-0 w-1.5 h-full cursor-ew-resize hover:bg-white/20 rounded-r" onMouseDown={(e) => handleMouseDown(e, "right")} />
+      <div className="absolute right-0 top-0 w-1.5 h-full cursor-ew-resize hover:bg-black/10 dark:hover:bg-white/20 rounded-r" onMouseDown={(e) => handleMouseDown(e, "right")} />
     </div>
   );
 });
@@ -282,8 +282,8 @@ const Clip = memo(function Clip({
 function Playhead({ playerRef, pixelsPerFrame }: { playerRef: React.RefObject<PlayerRef | null>; pixelsPerFrame: number }) {
   const frame = usePlayerFrame(playerRef);
   return (
-    <div className="absolute top-0 h-full w-px bg-white pointer-events-none z-20" style={{ left: frame * pixelsPerFrame }}>
-      <div className="absolute -top-0 -left-1.5 w-3 h-3 bg-white" style={{ clipPath: "polygon(50% 100%, 0 0, 100% 0)" }} />
+    <div className="absolute top-0 h-full w-px bg-zinc-900 dark:bg-white pointer-events-none z-20" style={{ left: frame * pixelsPerFrame }}>
+      <div className="absolute -top-0 -left-1.5 w-3 h-3 bg-zinc-900 dark:bg-white" style={{ clipPath: "polygon(50% 100%, 0 0, 100% 0)" }} />
     </div>
   );
 }

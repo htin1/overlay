@@ -1,7 +1,9 @@
-import { overlayRegistry } from "@/lib/overlays/registry"
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
 
-// Re-export cn for backwards compatibility
-export { cn } from "./cn"
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
 
 // Format seconds to M:SS
 export function formatTime(seconds: number): string {
@@ -17,11 +19,13 @@ export function clickToFrame(e: React.MouseEvent, pixelsPerFrame: number, totalF
   return Math.max(0, Math.min(totalFrames - 1, Math.round(x / pixelsPerFrame)));
 }
 
-// Factory functions - delegate to registry
-export const createImage = overlayRegistry.image.create;
-export const createVideo = overlayRegistry.video.create;
-export const createText = overlayRegistry.text.create;
-export const createTypingText = overlayRegistry["typing-text"].create;
-export const createNotification = overlayRegistry.notification.create;
-export const createChat = overlayRegistry.chat.create;
+// Factory functions - lazy import to avoid circular dependency
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getRegistry = () => require("@/overlays/registry").overlayRegistry as any;
+
+export const createMedia = (overrides?: Record<string, unknown>) => getRegistry().media.create(overrides);
+export const createText = (overrides?: Record<string, unknown>) => getRegistry().text.create(overrides);
+export const createTypingText = (overrides?: Record<string, unknown>) => getRegistry()["typing-text"].create(overrides);
+export const createNotification = (overrides?: Record<string, unknown>) => getRegistry().notification.create(overrides);
+export const createChat = (overrides?: Record<string, unknown>) => getRegistry().chat.create(overrides);
 

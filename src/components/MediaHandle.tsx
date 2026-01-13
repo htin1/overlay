@@ -2,9 +2,7 @@
 
 import { useRef, useCallback } from "react";
 import { useDrag } from "../hooks/useDrag";
-import type { ImageOverlayData, VideoOverlayData } from "@/lib/overlays/registry";
-
-type MediaOverlayData = ImageOverlayData | VideoOverlayData;
+import type { MediaOverlayData } from "@/overlays/registry";
 
 interface Props {
   overlay: MediaOverlayData;

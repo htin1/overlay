@@ -1,5 +1,4 @@
-import { imageOverlay, type ImageOverlayData } from "./image";
-import { videoOverlay, type VideoOverlayData } from "./video";
+import { mediaOverlay, type MediaOverlayData } from "./media";
 import { textOverlay, type TextOverlayData } from "./text";
 import { typingTextOverlay, type TypingTextOverlayData } from "./typing-text";
 import { notificationOverlay, type NotificationOverlayData, type NotificationVariant } from "./notification";
@@ -8,8 +7,7 @@ import type { BaseOverlay, OverlayDefinition } from "./base";
 
 // All overlay definitions in one place
 export const overlayRegistry = {
-  image: imageOverlay,
-  video: videoOverlay,
+  media: mediaOverlay,
   text: textOverlay,
   "typing-text": typingTextOverlay,
   notification: notificationOverlay,
@@ -20,8 +18,7 @@ export type OverlayType = keyof typeof overlayRegistry;
 
 // Union of all overlay data types
 export type Overlay =
-  | ImageOverlayData
-  | VideoOverlayData
+  | MediaOverlayData
   | TextOverlayData
   | TypingTextOverlayData
   | NotificationOverlayData
@@ -32,16 +29,14 @@ export function getOverlayDefinition(type: string): OverlayDefinition<BaseOverla
   return overlayRegistry[type as OverlayType] as unknown as OverlayDefinition<BaseOverlay> | undefined;
 }
 
-// Type guards - generated from registry
-export const isMediaOverlay = (o: Overlay): o is ImageOverlayData | VideoOverlayData =>
-  o.type === "image" || o.type === "video";
+// Type guards
+export const isMediaOverlay = (o: Overlay): o is MediaOverlayData => o.type === "media";
 
 // Re-export types for convenience
 export type {
   BaseOverlay,
   OverlayDefinition,
-  ImageOverlayData,
-  VideoOverlayData,
+  MediaOverlayData,
   TextOverlayData,
   TypingTextOverlayData,
   NotificationOverlayData,

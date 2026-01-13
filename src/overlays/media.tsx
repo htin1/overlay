@@ -1,12 +1,12 @@
 "use client";
 
-import { Img } from "remotion";
+import { Img, OffthreadVideo } from "remotion";
 import { Upload } from "lucide-react";
 import type { BaseOverlay, OverlayDefinition } from "./base";
 import { TOTAL_FRAMES } from "@/lib/constants";
 
-export interface ImageOverlayData extends BaseOverlay {
-  type: "image";
+export interface MediaOverlayData extends BaseOverlay {
+  type: "media";
   src: string;
   mediaX: number;
   mediaY: number;
@@ -17,14 +17,21 @@ export interface ImageOverlayData extends BaseOverlay {
 const input = "bg-white/5 px-3 py-2 rounded-lg text-sm placeholder:text-white/30 focus:outline-none focus:bg-white/10 transition-colors";
 const btnIcon = "text-white/40 hover:text-white hover:bg-white/5 p-2 rounded-lg cursor-pointer transition-all";
 
-export const imageOverlay: OverlayDefinition<ImageOverlayData> = {
-  type: "image",
+const VIDEO_EXTENSIONS = [".mp4", ".webm", ".mov", ".avi", ".mkv", ".m4v"];
 
-  isType: (o): o is ImageOverlayData => o.type === "image",
+function isVideoSrc(src: string): boolean {
+  const lower = src.toLowerCase();
+  return VIDEO_EXTENSIONS.some((ext) => lower.includes(ext));
+}
+
+export const mediaOverlay: OverlayDefinition<MediaOverlayData> = {
+  type: "media",
+
+  isType: (o): o is MediaOverlayData => o.type === "media",
 
   create: (overrides) => ({
     id: crypto.randomUUID(),
-    type: "image",
+    type: "media",
     src: "",
     x: 5, y: 60, w: 20, h: 25,
     mediaX: 10, mediaY: 10, mediaW: 80, mediaH: 80,
@@ -36,7 +43,7 @@ export const imageOverlay: OverlayDefinition<ImageOverlayData> = {
     ...overrides,
   }),
 
-  render: ({ overlay, durationInFrames: _ }) => {
+  render: ({ overlay }) => {
     if (!overlay.src) return null;
 
     const style = overlay.glass
@@ -55,6 +62,9 @@ export const imageOverlay: OverlayDefinition<ImageOverlayData> = {
           objectFit: "cover" as const,
         };
 
+    if (isVideoSrc(overlay.src)) {
+      return <OffthreadVideo src={overlay.src} style={style} />;
+    }
     return <Img src={overlay.src} style={style} />;
   },
 
@@ -64,14 +74,14 @@ export const imageOverlay: OverlayDefinition<ImageOverlayData> = {
         value={overlay.src}
         onChange={(e) => onUpdate({ src: e.target.value })}
         onClick={(e) => e.stopPropagation()}
-        placeholder="Image URL"
+        placeholder="Image or video URL"
         className={`flex-1 ${input}`}
       />
       <label className={btnIcon}>
         <Upload size={14} />
         <input
           type="file"
-          accept="image/*"
+          accept="image/*,video/*"
           className="hidden"
           onClick={(e) => e.stopPropagation()}
           onChange={(e) => {
