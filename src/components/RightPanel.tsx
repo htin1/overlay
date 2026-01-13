@@ -128,7 +128,7 @@ export function RightPanel({ overlay, onUpdate, onRemove, media = [] }: Props) {
               {messages.length === 0 && (
                 <div className="space-y-3">
                   <div className="text-center pt-4 pb-2">
-                    <Sparkles size={20} className="mx-auto mb-2 text-violet-500" />
+                    <Sparkles size={20} className="mx-auto mb-2 text-indigo-500" />
                     <p className="text-xs text-zinc-500">
                       Describe the animation you want
                     </p>
@@ -142,7 +142,7 @@ export function RightPanel({ overlay, onUpdate, onRemove, media = [] }: Props) {
                         onClick={() => setChatInput(suggestion.prompt)}
                         className="w-full flex items-center gap-2.5 p-2.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-left group"
                       >
-                        <div className="p-1.5 rounded-md bg-violet-500/10 text-violet-500">
+                        <div className="p-1.5 rounded-md bg-indigo-500/10 text-indigo-500">
                           <suggestion.icon size={14} />
                         </div>
                         <span className="text-xs text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white">
@@ -167,7 +167,7 @@ export function RightPanel({ overlay, onUpdate, onRemove, media = [] }: Props) {
                 return message.role === "user" ? (
                   <div
                     key={message.id}
-                    className="ml-6 bg-violet-500 text-white rounded-xl rounded-tr-sm p-2.5 text-xs"
+                    className="ml-6 bg-indigo-500 text-white rounded-xl rounded-tr-sm p-2.5 text-xs"
                   >
                     {message.content}
                   </div>
@@ -204,13 +204,13 @@ export function RightPanel({ overlay, onUpdate, onRemove, media = [] }: Props) {
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   placeholder="Describe animation..."
-                  className="flex-1 px-3 py-2 text-xs bg-zinc-100 dark:bg-zinc-800 rounded-lg border-0 focus:ring-1 focus:ring-violet-500 outline-none"
+                  className="flex-1 px-3 py-2 text-xs bg-zinc-100 dark:bg-zinc-800 rounded-lg border-0 focus:ring-1 focus:ring-indigo-500 outline-none"
                   disabled={isLoading}
                 />
                 <button
                   type="submit"
                   disabled={isLoading || !chatInput.trim()}
-                  className="p-2 bg-violet-500 hover:bg-violet-600 disabled:opacity-50 text-white rounded-lg transition-colors"
+                  className="p-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white rounded-lg transition-colors"
                 >
                   {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                 </button>
