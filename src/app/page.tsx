@@ -11,23 +11,27 @@ import { MediaHandle } from "../components/MediaHandle";
 import { TopToolbar } from "../components/TopToolbar";
 import { LeftPanel } from "../components/LeftPanel";
 import { RightPanel } from "../components/RightPanel";
-import { SAMPLE_VIDEO, TOTAL_FRAMES, FPS } from "../lib/constants";
+import { FPS } from "../lib/constants";
 import { createMedia, createText } from "../lib/utils";
 import { useHistory } from "../hooks/useHistory";
+import { useTheme } from "../hooks/useTheme";
 
+const MIN_DURATION = 300;
 const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
 export default function Home() {
-  const [videoUrl, setVideoUrl] = useState(SAMPLE_VIDEO);
+  const { theme } = useTheme();
   const { state: overlays, set: setOverlays, undo, redo, canUndo, canRedo } = useHistory<Overlay[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
-  const [exportStatus, setExportStatus] = useState<{ active: boolean; message: string; progress?: number }>({
-    active: false,
-    message: "",
-  });
+  const [exporting, setExporting] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<PlayerRef>(null);
+
+  const totalFrames = Math.max(MIN_DURATION, ...overlays.map((o) => o.endFrame));
+  const backgroundColor = theme === "dark" ? "#09090b" : "#ffffff";
+  const selected = overlays.find((o) => o.id === selectedId) ?? null;
+  const visibleOverlays = overlays.filter((o) => o.visible !== false);
 
   const update = useCallback((id: string, data: Partial<Overlay>) =>
     setOverlays((prev) => prev.map((o) => (o.id === id ? { ...o, ...data } as Overlay : o))), [setOverlays]);
@@ -48,37 +52,30 @@ export default function Home() {
 
   const toggleVisibility = useCallback((id: string) => {
     setOverlays((prev) => prev.map((o) =>
-      o.id === id ? { ...o, visible: o.visible === false ? true : false } as Overlay : o
+      o.id === id ? { ...o, visible: o.visible !== false ? false : true } as Overlay : o
     ));
   }, [setOverlays]);
 
   const exportVideo = async () => {
-    setExportStatus({ active: true, message: "Starting..." });
+    setExporting(true);
     try {
       const res = await fetch("/api/render", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ videoSrc: videoUrl, overlays }),
+        body: JSON.stringify({ overlays, backgroundColor, totalFrames }),
       });
 
       const reader = res.body?.getReader();
-      const decoder = new TextDecoder();
       if (!reader) throw new Error("No response body");
 
+      const decoder = new TextDecoder();
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const text = decoder.decode(value);
-        const lines = text.split("\n").filter((l) => l.startsWith("data: "));
-
-        for (const line of lines) {
+        for (const line of decoder.decode(value).split("\n").filter((l) => l.startsWith("data: "))) {
           const data = JSON.parse(line.slice(6));
-          if (data.type === "status") {
-            setExportStatus({ active: true, message: data.message });
-          } else if (data.type === "progress") {
-            setExportStatus({ active: true, message: "Rendering...", progress: data.progress });
-          } else if (data.type === "done") {
+          if (data.type === "done") {
             const a = document.createElement("a");
             a.href = `/api/render/${data.filename}`;
             a.download = "export.mp4";
@@ -92,12 +89,9 @@ export default function Home() {
       console.error(e);
       alert("Export failed");
     } finally {
-      setExportStatus({ active: false, message: "" });
+      setExporting(false);
     }
   };
-
-  const selected = overlays.find((o) => o.id === selectedId) || null;
-  const visibleOverlays = overlays.filter((o) => o.visible !== false);
 
   const zoomIn = () => {
     const idx = ZOOM_LEVELS.findIndex((z) => z >= zoom);
@@ -111,32 +105,41 @@ export default function Home() {
 
   return (
     <div className="h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white flex flex-col overflow-hidden">
-      {/* Top Toolbar */}
       <TopToolbar
         onExport={exportVideo}
-        exportStatus={exportStatus}
+        exporting={exporting}
         canUndo={canUndo}
         canRedo={canRedo}
         onUndo={undo}
         onRedo={redo}
       />
 
-      {/* Main area: Left Panel + Canvas + Right Panel */}
+      {/* Main area: Panels + Canvas */}
       <div className="flex-1 flex min-h-0">
-        {/* Left Panel - Layers */}
-        <LeftPanel
-          overlays={overlays}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-          onToggleVisibility={toggleVisibility}
-          onAddOverlay={add}
-        />
+        {/* Left Panels - Layers + Properties */}
+        <div className="flex">
+          <LeftPanel
+            overlays={overlays}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            onToggleVisibility={toggleVisibility}
+            onAddOverlay={add}
+            onReorder={setOverlays}
+          />
+          {selected && (
+            <RightPanel
+              overlay={selected}
+              onUpdate={(data) => update(selected.id, data)}
+              onRemove={() => remove(selected.id)}
+            />
+          )}
+        </div>
 
         {/* Canvas area */}
         <main className="flex-1 flex flex-col items-center justify-center p-6 min-w-0 bg-zinc-100 dark:bg-zinc-900/30">
           <div
             ref={containerRef}
-            className="relative rounded-2xl overflow-hidden bg-black shadow-2xl"
+            className="relative overflow-hidden bg-black shadow-lg"
             style={{
               width: `${Math.min(100, 60 * zoom)}%`,
               maxWidth: `${960 * zoom}px`,
@@ -145,8 +148,8 @@ export default function Home() {
             <Player
               ref={playerRef}
               component={VideoComposition}
-              inputProps={{ videoSrc: videoUrl, overlays: visibleOverlays }}
-              durationInFrames={TOTAL_FRAMES}
+              inputProps={{ overlays: visibleOverlays, backgroundColor }}
+              durationInFrames={totalFrames}
               fps={FPS}
               compositionWidth={1920}
               compositionHeight={1080}
@@ -198,13 +201,6 @@ export default function Home() {
             </button>
           </div>
         </main>
-
-        {/* Right Panel - Properties */}
-        <RightPanel
-          overlay={selected}
-          onUpdate={(data) => selected && update(selected.id, data)}
-          onRemove={() => selected && remove(selected.id)}
-        />
       </div>
 
       {/* Timeline */}
@@ -214,7 +210,7 @@ export default function Home() {
         onSelect={setSelectedId}
         onUpdateTiming={updateTiming}
         playerRef={playerRef}
-        totalFrames={TOTAL_FRAMES}
+        totalFrames={totalFrames}
         fps={FPS}
       />
     </div>

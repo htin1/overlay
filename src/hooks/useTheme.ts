@@ -22,24 +22,28 @@ export function useTheme() {
 const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 export function useThemeState() {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window !== "undefined") {
-      return (localStorage.getItem("theme") as Theme) || "dark";
+  // Always start with "dark" for SSR consistency - the inline script handles the actual class
+  const [theme, setTheme] = useState<Theme>("dark");
+  const [mounted, setMounted] = useState(false);
+
+  // On mount, read the actual theme from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem("theme") as Theme | null;
+    if (stored) {
+      setTheme(stored);
     }
-    return "dark";
-  });
+    setMounted(true);
+  }, []);
 
   useIsomorphicLayoutEffect(() => {
+    if (!mounted) return;
     if (theme === "dark") {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
     }
-  }, [theme]);
-
-  useEffect(() => {
     localStorage.setItem("theme", theme);
-  }, [theme]);
+  }, [theme, mounted]);
 
   const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
 

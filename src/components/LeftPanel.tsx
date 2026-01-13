@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Plus, Eye, EyeOff, ImageIcon, Type, ChevronDown } from "lucide-react";
+import { Plus, Eye, EyeOff, ImageIcon, Type, ChevronDown, GripVertical } from "lucide-react";
 import type { Overlay, TextOverlayData } from "@/overlays/registry";
 import { OVERLAY_COLORS } from "@/lib/constants";
 
@@ -11,25 +11,16 @@ interface Props {
   onSelect: (id: string) => void;
   onToggleVisibility: (id: string) => void;
   onAddOverlay: (type: "media" | "text") => void;
+  onReorder: (overlays: Overlay[]) => void;
 }
 
 const btnIcon = "text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/10 p-1.5 rounded-lg cursor-pointer transition-all";
 
 function getOverlayLabel(overlay: Overlay): string {
-  switch (overlay.type) {
-    case "text":
-      return (overlay as TextOverlayData).text?.slice(0, 16) || "Text";
-    case "media":
-      return "Media";
-    case "typing-text":
-      return "Typing Text";
-    case "notification":
-      return "Notification";
-    case "chat":
-      return "Chat";
-    default:
-      return "Layer";
+  if (overlay.type === "text") {
+    return (overlay as TextOverlayData).text?.slice(0, 16) || "Text";
   }
+  return overlay.type.split("-").map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
 }
 
 export function LeftPanel({
@@ -38,8 +29,11 @@ export function LeftPanel({
   onSelect,
   onToggleVisibility,
   onAddOverlay,
+  onReorder,
 }: Props) {
   const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
   const addMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -51,6 +45,43 @@ export function LeftPanel({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    setDraggedId(id);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    if (id !== draggedId) {
+      setDragOverId(id);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverId(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    if (!draggedId || draggedId === targetId) return;
+
+    const draggedIndex = overlays.findIndex((o) => o.id === draggedId);
+    const targetIndex = overlays.findIndex((o) => o.id === targetId);
+
+    const newOverlays = [...overlays];
+    const [removed] = newOverlays.splice(draggedIndex, 1);
+    newOverlays.splice(targetIndex, 0, removed);
+
+    onReorder(newOverlays);
+    setDraggedId(null);
+    setDragOverId(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedId(null);
+    setDragOverId(null);
+  };
 
   return (
     <div className="w-56 border-r border-zinc-200 dark:border-white/5 bg-zinc-50 dark:bg-zinc-900/50 flex flex-col overflow-hidden">
@@ -98,15 +129,26 @@ export function LeftPanel({
               const colors = OVERLAY_COLORS[overlay.type as keyof typeof OVERLAY_COLORS];
               const isVisible = overlay.visible !== false;
               const isSelected = selectedId === overlay.id;
+              const isDragging = draggedId === overlay.id;
+              const isDragOver = dragOverId === overlay.id;
 
               return (
                 <div
                   key={overlay.id}
-                  className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors ${
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, overlay.id)}
+                  onDragOver={(e) => handleDragOver(e, overlay.id)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, overlay.id)}
+                  onDragEnd={handleDragEnd}
+                  className={`flex items-center gap-1 px-2 py-2 cursor-pointer transition-colors ${
                     isSelected ? "bg-zinc-200 dark:bg-white/10" : "hover:bg-zinc-100 dark:hover:bg-white/5"
-                  }`}
+                  } ${isDragging ? "opacity-50" : ""} ${isDragOver ? "border-t-2 border-blue-500" : ""}`}
                   onClick={() => onSelect(overlay.id)}
                 >
+                  <div className="cursor-grab active:cursor-grabbing text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400">
+                    <GripVertical size={14} />
+                  </div>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();

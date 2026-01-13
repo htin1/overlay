@@ -16,9 +16,9 @@ const webpackOverride: WebpackOverrideFn = (config) => ({
 });
 
 export async function POST(req: Request) {
-  const { videoSrc, overlays } = await req.json();
+  const { overlays, backgroundColor, totalFrames } = await req.json();
 
-  const entryPoint = path.join(process.cwd(), "src/lib/remotion/Root.tsx");
+  const entryPoint = path.join(process.cwd(), "src/remotion/Root.tsx");
   const filename = `video-${Date.now()}.mp4`;
   const outputPath = path.join(process.cwd(), "out", filename);
 
@@ -36,11 +36,17 @@ export async function POST(req: Request) {
         const bundleLocation = await bundle({ entryPoint, webpackOverride });
 
         send({ type: "status", message: "Preparing..." });
-        const composition = await selectComposition({
+        const baseComposition = await selectComposition({
           serveUrl: bundleLocation,
           id: "Video",
-          inputProps: { videoSrc, overlays },
+          inputProps: { overlays, backgroundColor },
         });
+
+        // Override duration with dynamic totalFrames
+        const composition = {
+          ...baseComposition,
+          durationInFrames: totalFrames || baseComposition.durationInFrames,
+        };
 
         send({ type: "status", message: "Rendering..." });
         await renderMedia({
@@ -48,7 +54,7 @@ export async function POST(req: Request) {
           serveUrl: bundleLocation,
           codec: "h264",
           outputLocation: outputPath,
-          inputProps: { videoSrc, overlays },
+          inputProps: { overlays, backgroundColor },
           concurrency: 1,
           onProgress: ({ progress }) => {
             send({ type: "progress", progress: Math.round(progress * 100) });

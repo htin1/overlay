@@ -2,7 +2,6 @@ import type { AnimationType } from "@/overlays/base";
 
 export const TOTAL_FRAMES = 900;
 export const FPS = 30;
-export const SAMPLE_VIDEO = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
 export const FONTS = ["Inter", "Open Sans", "JetBrains Mono", "Arial", "Georgia", "Courier New", "Impact"];
 
 // Timeline configuration

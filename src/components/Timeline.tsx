@@ -204,7 +204,6 @@ const Track = memo(function Track({
       >
         <Clip
           overlay={overlay}
-          totalFrames={totalFrames}
           pixelsPerFrame={pixelsPerFrame}
           selected={selected}
           onSelect={onSelect}
@@ -217,14 +216,12 @@ const Track = memo(function Track({
 
 const Clip = memo(function Clip({
   overlay,
-  totalFrames,
   pixelsPerFrame,
   selected,
   onSelect,
   onUpdateTiming,
 }: {
   overlay: Overlay;
-  totalFrames: number;
   pixelsPerFrame: number;
   selected: boolean;
   onSelect: () => void;
@@ -241,13 +238,13 @@ const Clip = memo(function Clip({
       const duration = initial.current.endFrame - initial.current.startFrame;
 
       if (mode === "move") {
-        const newStart = Math.max(0, Math.min(totalFrames - duration, initial.current.startFrame + delta));
+        const newStart = Math.max(0, initial.current.startFrame + delta);
         onUpdateTiming(newStart, newStart + duration);
       } else if (mode === "left") {
         const newStart = Math.max(0, Math.min(initial.current.endFrame - MIN_CLIP_DURATION, initial.current.startFrame + delta));
         onUpdateTiming(newStart, initial.current.endFrame);
       } else {
-        const newEnd = Math.max(initial.current.startFrame + MIN_CLIP_DURATION, Math.min(totalFrames, initial.current.endFrame + delta));
+        const newEnd = Math.max(initial.current.startFrame + MIN_CLIP_DURATION, initial.current.endFrame + delta);
         onUpdateTiming(initial.current.startFrame, newEnd);
       }
     },
