@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 
 export interface QuestionOption {
   id: string;
@@ -33,6 +33,13 @@ interface UseAnimationChatOptions {
   onCodeGenerated?: (code: string) => void;
   currentCode?: string;
   media?: MediaContext[];
+  messages?: Message[];
+  onMessagesChange?: (messages: Message[]) => void;
+}
+
+interface StreamCallbacks {
+  onMessagesChange: ((messages: Message[]) => void) | undefined;
+  onCodeGenerated: ((code: string) => void) | undefined;
 }
 
 function parseQuestionResponse(content: string): QuestionData | null {
@@ -55,13 +62,33 @@ function parseQuestionResponse(content: string): QuestionData | null {
   }
 }
 
-export function useAnimationChat({ onCodeGenerated, currentCode, media = [] }: UseAnimationChatOptions = {}) {
-  const [messages, setMessages] = useState<Message[]>([]);
+export function useAnimationChat({
+  onCodeGenerated,
+  currentCode,
+  media = [],
+  messages: controlledMessages = [],
+  onMessagesChange
+}: UseAnimationChatOptions = {}) {
+  const messagesRef = useRef(controlledMessages);
+  messagesRef.current = controlledMessages;
+
+  const streamCallbacksRef = useRef<StreamCallbacks | null>(null);
+
+  const updateMessages = useCallback((updater: Message[] | ((prev: Message[]) => Message[])) => {
+    const newMessages = typeof updater === "function" ? updater(messagesRef.current) : updater;
+    messagesRef.current = newMessages;
+    const callback = streamCallbacksRef.current?.onMessagesChange ?? onMessagesChange;
+    callback?.(newMessages);
+  }, [onMessagesChange]);
+
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || isLoading) return;
+
+    // Capture callbacks at stream start so layer switching doesn't lose data
+    streamCallbacksRef.current = { onMessagesChange, onCodeGenerated };
 
     const userMessage: Message = {
       id: crypto.randomUUID(),
@@ -69,7 +96,7 @@ export function useAnimationChat({ onCodeGenerated, currentCode, media = [] }: U
       content: content.trim(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    updateMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
 
@@ -78,7 +105,7 @@ export function useAnimationChat({ onCodeGenerated, currentCode, media = [] }: U
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: [...messages, userMessage].map((m) => ({
+          messages: messagesRef.current.map((m) => ({
             role: m.role === "question" ? "assistant" : m.role,
             content: m.content,
           })),
@@ -94,13 +121,9 @@ export function useAnimationChat({ onCodeGenerated, currentCode, media = [] }: U
       const reader = response.body?.getReader();
       if (!reader) throw new Error("No response body");
 
-      const assistantMessage: Message = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: "",
-      };
+      const assistantMessageId = crypto.randomUUID();
 
-      setMessages((prev) => [...prev, assistantMessage]);
+      updateMessages((prev) => [...prev, { id: assistantMessageId, role: "assistant", content: "" }]);
 
       const decoder = new TextDecoder();
       let fullContent = "";
@@ -112,9 +135,9 @@ export function useAnimationChat({ onCodeGenerated, currentCode, media = [] }: U
         const chunk = decoder.decode(value, { stream: true });
         fullContent += chunk;
 
-        setMessages((prev) =>
+        updateMessages((prev) =>
           prev.map((m) =>
-            m.id === assistantMessage.id ? { ...m, content: fullContent } : m
+            m.id === assistantMessageId ? { ...m, content: fullContent } : m
           )
         );
       }
@@ -122,44 +145,41 @@ export function useAnimationChat({ onCodeGenerated, currentCode, media = [] }: U
       // Check if response contains a question
       const questionData = parseQuestionResponse(fullContent);
       if (questionData) {
-        setMessages((prev) =>
+        updateMessages((prev) =>
           prev.map((m) =>
-            m.id === assistantMessage.id
+            m.id === assistantMessageId
               ? { ...m, role: "question", questionData, content: questionData.question }
               : m
           )
         );
       } else {
-        // Extract code from the response
+        // Extract and apply generated code
         const codeMatch = fullContent.match(/```tsx\n([\s\S]*?)```/);
-        if (codeMatch && onCodeGenerated) {
-          onCodeGenerated(codeMatch[1].trim());
+        if (codeMatch) {
+          streamCallbacksRef.current?.onCodeGenerated?.(codeMatch[1].trim());
         }
       }
     } catch (error) {
       console.error("Chat error:", error);
-      const errorMessage: Message = {
+      updateMessages((prev) => [...prev, {
         id: crypto.randomUUID(),
         role: "assistant",
         content: "Sorry, I encountered an error generating the animation. Please try again.",
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+      }]);
     } finally {
       setIsLoading(false);
+      streamCallbacksRef.current = null;
     }
-  }, [messages, currentCode, media, onCodeGenerated, isLoading]);
+  }, [updateMessages, currentCode, media, isLoading, onMessagesChange, onCodeGenerated]);
 
   const answerQuestion = useCallback(
     (questionId: string, option: QuestionOption) => {
-      // Mark the question as answered
-      setMessages((prev) =>
+      updateMessages((prev) =>
         prev.map((m) => (m.id === questionId ? { ...m, answered: true } : m))
       );
-
-      // Send the selected option as a user message
       sendMessage(option.label);
     },
-    [sendMessage]
+    [sendMessage, updateMessages]
   );
 
   const handleSubmit = useCallback(
@@ -171,7 +191,7 @@ export function useAnimationChat({ onCodeGenerated, currentCode, media = [] }: U
   );
 
   return {
-    messages,
+    messages: controlledMessages,
     input,
     setInput,
     isLoading,

@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { TOTAL_FRAMES } from "@/lib/constants";
 import { evaluateAnimationCode } from "@/lib/sandbox/evaluator";
 import { AlertCircle } from "lucide-react";
+import type { Message } from "@/hooks/useAnimationChat";
 
 // Base overlay interface
 export interface Overlay {
@@ -20,6 +21,7 @@ export interface Overlay {
   endFrame: number;
   glass?: boolean;
   visible?: boolean;
+  messages?: Message[];
 }
 
 // Renderer component
@@ -99,6 +101,7 @@ export const codeOverlay = {
     startFrame: 0,
     endFrame: TOTAL_FRAMES,
     glass: false,
+    messages: [],
     ...overrides,
   }),
 

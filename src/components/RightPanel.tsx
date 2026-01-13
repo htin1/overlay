@@ -42,6 +42,8 @@ export function RightPanel({ overlay, onUpdate, onRemove, media = [] }: Props) {
     onCodeGenerated: (code) => onUpdate({ code }),
     currentCode: overlay.code,
     media: media,
+    messages: overlay.messages ?? [],
+    onMessagesChange: (messages) => onUpdate({ messages }),
   });
 
   useEffect(() => {
@@ -182,7 +184,7 @@ export function RightPanel({ overlay, onUpdate, onRemove, media = [] }: Props) {
                 return message.role === "user" ? (
                   <div
                     key={message.id}
-                    className="ml-6 bg-indigo-500 text-white rounded-xl rounded-tr-sm p-2.5 text-xs"
+                    className="ml-6 border border-indigo-500 text-zinc-900 dark:text-white rounded-xl rounded-tr-sm p-2.5 text-xs"
                   >
                     {message.content}
                   </div>
