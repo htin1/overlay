@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Trash2, Code2, Sparkles, Send, Loader2, Type, Image, Video, Zap, Wand2 } from "lucide-react";
+import { Trash2, Code2, Sparkles, Send, Loader2, Type, Image, Video, Zap, Wand2, Check } from "lucide-react";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { vscodeDark } from "@uiw/codemirror-theme-vscode";
@@ -160,35 +160,39 @@ export function RightPanel({ overlay, onUpdate, onRemove, media = [] }: Props) {
                 </div>
               )}
 
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`${
-                    message.role === "user"
-                      ? "ml-6 bg-violet-500 text-white rounded-xl rounded-tr-sm"
-                      : "mr-6 bg-zinc-200 dark:bg-zinc-800 rounded-xl rounded-tl-sm"
-                  } p-2.5 text-xs`}
-                >
-                  {message.role === "assistant" ? (
-                    message.content.includes("```tsx") ? (
-                      <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
-                        <Sparkles size={12} />
-                        Code generated!
+              {messages.map((message, index) => {
+                const isLastMessage = index === messages.length - 1;
+                const isStreamingThis = isLoading && isLastMessage && message.role === "assistant";
+
+                return message.role === "user" ? (
+                  <div
+                    key={message.id}
+                    className="ml-6 bg-violet-500 text-white rounded-xl rounded-tr-sm p-2.5 text-xs"
+                  >
+                    {message.content}
+                  </div>
+                ) : (
+                  <div key={message.id} className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    {isStreamingThis ? (
+                      <span className="flex items-center gap-1.5">
+                        <span className="animate-pulse">Generating</span>
+                        <span className="flex gap-0.5">
+                          <span className="w-1 h-1 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                          <span className="w-1 h-1 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                          <span className="w-1 h-1 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                        </span>
+                      </span>
+                    ) : message.content.includes("```tsx") ? (
+                      <span className="flex items-center gap-1">
+                        <Check size={12} className="text-zinc-400" />
+                        Generated
                       </span>
                     ) : (
                       <span className="whitespace-pre-wrap">{message.content}</span>
-                    )
-                  ) : (
-                    message.content
-                  )}
-                </div>
-              ))}
-
-              {isLoading && (
-                <div className="mr-6 bg-zinc-200 dark:bg-zinc-800 rounded-xl rounded-tl-sm p-2.5">
-                  <Loader2 size={14} className="animate-spin text-zinc-400" />
-                </div>
-              )}
+                    )}
+                  </div>
+                );
+              })}
 
               <div ref={messagesEndRef} />
             </div>

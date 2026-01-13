@@ -55,40 +55,27 @@ export function DraggableOverlay({
     [x, y, width, height, onSelect, startDrag]
   );
 
-  const borderColor = selected ? "bg-blue-500" : "bg-white/30";
-
   return (
     <div
-      className="absolute pointer-events-none"
+      className={`absolute pointer-events-none border-2 ${
+        selected ? "border-blue-500" : "border-transparent hover:border-white/30"
+      }`}
       style={{ left: `${x}%`, top: `${y}%`, width: `${width}%`, height: `${height}%` }}
     >
-      {/* Top border */}
+      {/* Drag handle */}
       <div
-        className={`absolute top-0 left-0 right-0 h-0.5 ${borderColor} cursor-move pointer-events-auto`}
-        onMouseDown={(e) => handleMouseDown(e, "move")}
-      />
-      {/* Bottom border */}
-      <div
-        className={`absolute bottom-0 left-0 right-0 h-0.5 ${borderColor} cursor-move pointer-events-auto`}
-        onMouseDown={(e) => handleMouseDown(e, "move")}
-      />
-      {/* Left border */}
-      <div
-        className={`absolute top-0 bottom-0 left-0 w-0.5 ${borderColor} cursor-move pointer-events-auto`}
-        onMouseDown={(e) => handleMouseDown(e, "move")}
-      />
-      {/* Right border */}
-      <div
-        className={`absolute top-0 bottom-0 right-0 w-0.5 ${borderColor} cursor-move pointer-events-auto`}
+        className={`absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full cursor-move pointer-events-auto border-2 ${
+          selected ? "bg-blue-500 border-blue-600" : "bg-white border-zinc-800 hover:bg-zinc-200"
+        }`}
         onMouseDown={(e) => handleMouseDown(e, "move")}
       />
       {/* Resize handle */}
-      <div
-        className={`absolute -bottom-1.5 -right-1.5 w-3 h-3 rounded-full border-2 cursor-se-resize pointer-events-auto ${
-          selected ? "bg-blue-500 border-blue-600" : "bg-white border-zinc-800"
-        }`}
-        onMouseDown={(e) => handleMouseDown(e, "resize")}
-      />
+      {selected && (
+        <div
+          className="absolute -bottom-1.5 -right-1.5 w-3 h-3 rounded-full border-2 cursor-se-resize pointer-events-auto bg-blue-500 border-blue-600"
+          onMouseDown={(e) => handleMouseDown(e, "resize")}
+        />
+      )}
     </div>
   );
 }
