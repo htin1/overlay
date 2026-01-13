@@ -2,7 +2,6 @@
 
 import { Player, PlayerRef } from "@remotion/player";
 import { useState, useRef, useCallback } from "react";
-import { Minus, Plus } from "lucide-react";
 import { VideoComposition } from "../remotion/Composition";
 import { type Overlay, codeOverlay } from "@/overlays";
 import { DraggableOverlay } from "../components/DraggableOverlay";
@@ -15,13 +14,11 @@ import { useHistory } from "../hooks/useHistory";
 import { useTheme } from "../hooks/useTheme";
 
 const MIN_DURATION = 300;
-const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
 export default function Home() {
   const { theme } = useTheme();
   const { state: overlays, set: setOverlays, undo, redo, canUndo, canRedo } = useHistory<Overlay[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [zoom, setZoom] = useState(1);
   const [exporting, setExporting] = useState(false);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -100,16 +97,6 @@ export default function Home() {
     }
   };
 
-  const zoomIn = () => {
-    const idx = ZOOM_LEVELS.findIndex((z) => z >= zoom);
-    if (idx < ZOOM_LEVELS.length - 1) setZoom(ZOOM_LEVELS[idx + 1]);
-  };
-
-  const zoomOut = () => {
-    const idx = ZOOM_LEVELS.findIndex((z) => z >= zoom);
-    if (idx > 0) setZoom(ZOOM_LEVELS[idx - 1]);
-  };
-
   return (
     <div className="h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white flex flex-col overflow-hidden">
       <TopToolbar
@@ -130,6 +117,7 @@ export default function Home() {
             selectedId={selectedId}
             onSelect={setSelectedId}
             onToggleVisibility={toggleVisibility}
+            onRemoveLayer={remove}
             onAddLayer={addLayer}
             onReorder={setOverlays}
             media={media}
@@ -150,11 +138,7 @@ export default function Home() {
         <main className="flex-1 flex flex-col items-center justify-center p-6 min-w-0 bg-zinc-100 dark:bg-zinc-900/30">
           <div
             ref={containerRef}
-            className="relative overflow-hidden bg-black shadow-lg"
-            style={{
-              width: `${Math.min(100, 60 * zoom)}%`,
-              maxWidth: `${960 * zoom}px`,
-            }}
+            className="relative overflow-hidden bg-black shadow-lg w-full max-w-4xl"
           >
             <Player
               ref={playerRef}
@@ -180,29 +164,6 @@ export default function Home() {
                 />
               ))}
             </div>
-          </div>
-
-          {/* Zoom controls */}
-          <div className="flex items-center gap-3 mt-4">
-            <button
-              onClick={zoomOut}
-              className="p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-white/10 rounded transition-colors"
-            >
-              <Minus size={14} />
-            </button>
-            <span className="text-xs text-zinc-500 w-12 text-center">{Math.round(zoom * 100)}%</span>
-            <button
-              onClick={zoomIn}
-              className="p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-white/10 rounded transition-colors"
-            >
-              <Plus size={14} />
-            </button>
-            <button
-              onClick={() => setZoom(1)}
-              className="px-2 py-1 text-xs text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-white/10 rounded transition-colors"
-            >
-              Fit
-            </button>
           </div>
         </main>
       </div>

@@ -51,7 +51,7 @@ export function Timeline({
       </div>
 
       {/* Scrollable area */}
-      <div ref={scrollRef} className="relative overflow-x-auto overflow-y-auto" style={{ minHeight: 150, maxHeight: 300 }}>
+      <div ref={scrollRef} className="relative overflow-x-auto overflow-y-auto" style={{ minHeight: 200, maxHeight: 400 }}>
         <div className="relative inline-block" style={{ minWidth: "100%", width: timelineWidth + TRACK_LABEL_WIDTH }}>
           {/* Ruler */}
           <div className="flex sticky top-0 z-10">

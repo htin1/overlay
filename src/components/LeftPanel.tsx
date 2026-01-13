@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Plus, Eye, EyeOff, GripVertical, Upload, Link, X, Film } from "lucide-react";
+import { Plus, Eye, EyeOff, GripVertical, Upload, Link, X, Film, Image, Layers, Trash2 } from "lucide-react";
 import type { Overlay } from "@/overlays";
 import { OVERLAY_COLORS } from "@/lib/constants";
 
@@ -18,6 +18,7 @@ interface Props {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onToggleVisibility: (id: string) => void;
+  onRemoveLayer: (id: string) => void;
   onAddLayer: () => void;
   onReorder: (overlays: Overlay[]) => void;
   media: MediaItem[];
@@ -51,6 +52,7 @@ export function LeftPanel({
   selectedId,
   onSelect,
   onToggleVisibility,
+  onRemoveLayer,
   onAddLayer,
   onReorder,
   media,
@@ -150,27 +152,29 @@ export function LeftPanel({
   };
 
   return (
-    <div className="w-56 border-r border-zinc-200 dark:border-white/5 bg-zinc-50 dark:bg-zinc-900/50 flex flex-col overflow-hidden">
+    <div className="w-72 border-r border-zinc-200 dark:border-white/5 bg-zinc-50 dark:bg-zinc-900/50 flex flex-col overflow-hidden">
       {/* Tabs */}
       <div className="flex border-b border-zinc-200 dark:border-white/5">
         <button
           onClick={() => setActiveTab("media")}
-          className={`flex-1 py-2.5 text-xs font-medium transition-colors ${
+          className={`flex-1 py-2.5 text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${
             activeTab === "media"
               ? "text-zinc-900 dark:text-white border-b-2 border-violet-500"
               : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
           }`}
         >
+          <Image size={12} />
           Media
         </button>
         <button
           onClick={() => setActiveTab("layers")}
-          className={`flex-1 py-2.5 text-xs font-medium transition-colors ${
+          className={`flex-1 py-2.5 text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${
             activeTab === "layers"
               ? "text-zinc-900 dark:text-white border-b-2 border-violet-500"
               : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
           }`}
         >
+          <Layers size={12} />
           Layers
         </button>
       </div>
@@ -178,28 +182,6 @@ export function LeftPanel({
       {/* Media Tab */}
       {activeTab === "media" && (
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* URL Input */}
-          <form onSubmit={handleAddUrl} className="p-2 border-b border-zinc-200 dark:border-white/5">
-            <div className="flex gap-1.5">
-              <div className="flex-1 relative">
-                <Link size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-400" />
-                <input
-                  value={urlInput}
-                  onChange={(e) => setUrlInput(e.target.value)}
-                  placeholder="Paste URL..."
-                  className="w-full pl-7 pr-2 py-1.5 text-xs bg-zinc-100 dark:bg-zinc-800 rounded-lg border-0 focus:ring-1 focus:ring-violet-500 outline-none"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={!urlInput.trim()}
-                className="px-2 py-1.5 bg-violet-500 hover:bg-violet-600 disabled:opacity-30 text-white rounded-lg transition-colors text-xs"
-              >
-                Add
-              </button>
-            </div>
-          </form>
-
           {/* Drop Zone / Media List */}
           <div
             className="flex-1 overflow-y-auto"
@@ -217,13 +199,38 @@ export function LeftPanel({
               >
                 <Upload size={20} className="mx-auto mb-2 text-zinc-400" />
                 <p className="text-xs text-zinc-500 mb-1">Drop files here</p>
-                <p className="text-[10px] text-zinc-400 mb-2">or paste from clipboard</p>
+                <p className="text-[10px] text-zinc-400 mb-3">or paste from clipboard</p>
+
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="text-xs text-violet-500 hover:text-violet-400"
+                  className="text-xs text-violet-500 hover:text-violet-400 mb-3 block mx-auto"
                 >
                   Browse files
                 </button>
+
+                <div className="border-t border-zinc-200 dark:border-zinc-700 pt-3 mt-1">
+                  <form onSubmit={handleAddUrl}>
+                    <div className="flex gap-1.5">
+                      <div className="flex-1 relative">
+                        <Link size={10} className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-400" />
+                        <input
+                          value={urlInput}
+                          onChange={(e) => setUrlInput(e.target.value)}
+                          placeholder="Paste URL..."
+                          className="w-full pl-6 pr-2 py-1.5 text-[11px] bg-zinc-100 dark:bg-zinc-800 rounded border-0 focus:ring-1 focus:ring-violet-500 outline-none"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={!urlInput.trim()}
+                        className="px-2 py-1.5 bg-violet-500 hover:bg-violet-600 disabled:opacity-30 text-white rounded transition-colors text-[11px]"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -336,6 +343,12 @@ export function LeftPanel({
                         className={`p-1 rounded transition-colors ${isVisible ? "text-zinc-500 hover:text-zinc-900 dark:hover:text-white" : "text-zinc-300 dark:text-zinc-600"}`}
                       >
                         {isVisible ? <Eye size={14} /> : <EyeOff size={14} />}
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onRemoveLayer(overlay.id); }}
+                        className="p-1 rounded transition-colors text-zinc-400 hover:text-red-500"
+                      >
+                        <Trash2 size={14} />
                       </button>
                       <div className={`w-2 h-2 rounded-full ${colors?.dot || "bg-violet-500"}`} />
                       <span className={`text-sm truncate flex-1 ${isVisible ? "text-zinc-700 dark:text-zinc-300" : "text-zinc-400 dark:text-zinc-600"}`}>
