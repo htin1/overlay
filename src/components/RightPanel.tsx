@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Trash2, Code2, Sparkles, Send, Loader2, Type, Image, Video, Zap, Wand2, Check } from "lucide-react";
+import { Trash2, Code2, Sparkles, Send, Loader2, Type, Image, Video, Zap, Wand2, Check, Settings } from "lucide-react";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { vscodeDark } from "@uiw/codemirror-theme-vscode";
@@ -10,6 +10,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAnimationChat } from "@/hooks/useAnimationChat";
 import { AskQuestion } from "./AskQuestion";
 import type { MediaItem } from "./LeftPanel";
+import { parseConfig, updateConfigValue } from "@/lib/parseConfig";
 
 interface Props {
   overlay: Overlay;
@@ -18,7 +19,7 @@ interface Props {
   media?: MediaItem[];
 }
 
-type Tab = "code" | "chat";
+type Tab = "chat" | "settings" | "code";
 
 const SUGGESTIONS = [
   { label: "Text animation", icon: Type, prompt: "Large white text that says 'Hello World' centered on screen with a fade-in animation" },
@@ -29,6 +30,7 @@ const SUGGESTIONS = [
 
 const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "chat", label: "Generate", icon: <Wand2 size={12} /> },
+  { id: "settings", label: "Settings", icon: <Settings size={12} /> },
   { id: "code", label: "Code", icon: <Code2 size={12} /> },
 ];
 
@@ -119,6 +121,80 @@ export function RightPanel({ overlay, onUpdate, onRemove, media = [] }: Props) {
             ) : (
               <div className="flex-1 flex items-center justify-center text-zinc-400 text-sm p-4">
                 <p>Use the AI tab to generate code</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "settings" && (
+          <div className="flex-1 overflow-y-auto p-3">
+            {overlay.code ? (
+              (() => {
+                const config = parseConfig(overlay.code);
+                if (config.length === 0) {
+                  return (
+                    <div className="text-center text-zinc-400 text-xs pt-4">
+                      No configurable settings found in code
+                    </div>
+                  );
+                }
+                return (
+                  <div className="space-y-3">
+                    {config.map((entry) => (
+                      <div key={entry.key}>
+                        <label className="block text-[10px] text-zinc-500 mb-1">
+                          {entry.key}
+                        </label>
+                        {entry.type === "color" ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={entry.value as string}
+                              onChange={(e) => {
+                                const newCode = updateConfigValue(overlay.code, entry.key, e.target.value);
+                                onUpdate({ code: newCode });
+                              }}
+                              className="w-8 h-8 rounded border border-zinc-200 dark:border-zinc-700 cursor-pointer"
+                            />
+                            <input
+                              type="text"
+                              value={entry.value as string}
+                              onChange={(e) => {
+                                const newCode = updateConfigValue(overlay.code, entry.key, e.target.value);
+                                onUpdate({ code: newCode });
+                              }}
+                              className="flex-1 px-2 py-1.5 text-xs bg-zinc-100 dark:bg-zinc-800 rounded border-0 outline-none focus:ring-1 focus:ring-indigo-500"
+                            />
+                          </div>
+                        ) : entry.type === "number" ? (
+                          <input
+                            type="number"
+                            value={entry.value as number}
+                            onChange={(e) => {
+                              const newCode = updateConfigValue(overlay.code, entry.key, parseFloat(e.target.value) || 0);
+                              onUpdate({ code: newCode });
+                            }}
+                            className="w-full px-2 py-1.5 text-xs bg-zinc-100 dark:bg-zinc-800 rounded border-0 outline-none focus:ring-1 focus:ring-indigo-500"
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            value={entry.value as string}
+                            onChange={(e) => {
+                              const newCode = updateConfigValue(overlay.code, entry.key, e.target.value);
+                              onUpdate({ code: newCode });
+                            }}
+                            className="w-full px-2 py-1.5 text-xs bg-zinc-100 dark:bg-zinc-800 rounded border-0 outline-none focus:ring-1 focus:ring-indigo-500"
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()
+            ) : (
+              <div className="text-center text-zinc-400 text-xs pt-4">
+                Generate an animation first to configure settings
               </div>
             )}
           </div>

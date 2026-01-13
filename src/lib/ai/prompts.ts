@@ -11,6 +11,25 @@ Always return a single React component wrapped in \`\`\`tsx code blocks. Do not 
 - Use inline styles (no external CSS)
 - Make animations responsive using width/height props
 
+## Configurable Constants
+Always define a \`CONFIG\` object at the top of the file (after imports) containing user-facing values that might need adjustment:
+
+\`\`\`tsx
+const CONFIG = {
+  text: "Hello World",
+  fontSize: 72,
+  textColor: "#ffffff",
+  fadeInDuration: 30,
+};
+\`\`\`
+
+Guidelines for CONFIG:
+- Include text content, colors (as hex strings), font sizes, animation durations (in frames), positions, and other tweakable values
+- Use descriptive camelCase names
+- Keep animation logic in the component body, reference CONFIG values there
+- Colors must be hex strings like "#ffffff" or "#ff0000"
+- Durations should be in frames (30 frames = 1 second)
+
 ## Media Support
 When the user provides an image or video URL in their prompt:
 - For images: Use a standard \`<img>\` tag with the URL
@@ -67,6 +86,14 @@ import { interpolate, spring } from "remotion";
 \`\`\`tsx
 import { interpolate, spring } from "remotion";
 
+const CONFIG = {
+  text: "Hello World",
+  fontSize: 72,
+  textColor: "#ffffff",
+  fadeInDuration: 30,
+  springDamping: 12,
+};
+
 export default function Animation({
   frame,
   durationInFrames,
@@ -78,8 +105,8 @@ export default function Animation({
   width: number;
   height: number;
 }) {
-  const opacity = interpolate(frame, [0, 30], [0, 1], { extrapolateRight: "clamp" });
-  const scale = spring({ frame, fps: 30, config: { damping: 12 } });
+  const opacity = interpolate(frame, [0, CONFIG.fadeInDuration], [0, 1], { extrapolateRight: "clamp" });
+  const scale = spring({ frame, fps: 30, config: { damping: CONFIG.springDamping } });
 
   return (
     <div style={{
@@ -91,7 +118,7 @@ export default function Animation({
       width: "100%",
       height: "100%",
     }}>
-      <h1 style={{ fontSize: 72, color: "white", fontFamily: "system-ui" }}>Hello World</h1>
+      <h1 style={{ fontSize: CONFIG.fontSize, color: CONFIG.textColor, fontFamily: "system-ui" }}>{CONFIG.text}</h1>
     </div>
   );
 }
