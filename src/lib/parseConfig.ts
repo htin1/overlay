@@ -12,39 +12,55 @@ function detectType(value: string | number): ConfigValueType {
   return "string";
 }
 
+// Find CONFIG block boundaries
+function findConfigBounds(code: string): { start: number; end: number } | null {
+  const match = code.match(/const\s+CONFIG\s*=\s*\{/);
+  if (!match) return null;
+
+  const start = match.index! + match[0].length;
+  let depth = 1;
+  let end = start;
+
+  for (let i = start; i < code.length && depth > 0; i++) {
+    if (code[i] === "{" || code[i] === "[") depth++;
+    else if (code[i] === "}" || code[i] === "]") depth--;
+    end = i;
+  }
+
+  return { start, end };
+}
+
 export function parseConfig(code: string): ConfigEntry[] {
   if (!code) return [];
 
-  // Match CONFIG object: const CONFIG = { ... };
-  const configMatch = code.match(/const\s+CONFIG\s*=\s*\{([^}]+)\}/);
-  if (!configMatch) return [];
+  const bounds = findConfigBounds(code);
+  if (!bounds) return [];
 
-  const configBody = configMatch[1];
+  const configBody = code.slice(bounds.start, bounds.end);
   const entries: ConfigEntry[] = [];
 
-  // Parse line by line to avoid matching content inside strings
-  const lines = configBody.split("\n");
-  for (const line of lines) {
-    // Match property definition at start of line: key: value
+  // Track nesting to only parse top-level properties
+  let depth = 0;
+  for (const line of configBody.split("\n")) {
+    const atTopLevel = depth === 0;
+
+    for (const char of line) {
+      if (char === "{" || char === "[") depth++;
+      else if (char === "}" || char === "]") depth--;
+    }
+
+    if (!atTopLevel) continue;
+
+    // Match simple key: value (skip arrays/objects)
     const match = line.match(/^\s*(\w+)\s*:\s*("[^"]*"|'[^']*'|-?\d+\.?\d*)\s*,?\s*$/);
     if (!match) continue;
 
-    const key = match[1];
-    const rawValue = match[2];
+    const [, key, rawValue] = match;
+    const value = rawValue.startsWith('"') || rawValue.startsWith("'")
+      ? rawValue.slice(1, -1)
+      : parseFloat(rawValue);
 
-    // Parse the value
-    let value: string | number;
-    if (rawValue.startsWith('"') || rawValue.startsWith("'")) {
-      value = rawValue.slice(1, -1);
-    } else {
-      value = parseFloat(rawValue);
-    }
-
-    entries.push({
-      key,
-      value,
-      type: detectType(value),
-    });
+    entries.push({ key, value, type: detectType(value) });
   }
 
   return entries;
@@ -52,12 +68,7 @@ export function parseConfig(code: string): ConfigEntry[] {
 
 export function updateConfigValue(code: string, key: string, newValue: string | number): string {
   if (!code) return code;
-
-  // Format the new value for code
-  const formattedValue = typeof newValue === "string" ? `"${newValue}"` : String(newValue);
-
-  // Match and replace the specific key in CONFIG
-  const regex = new RegExp(`(const\\s+CONFIG\\s*=\\s*\\{[^}]*${key}\\s*:\\s*)("[^"]*"|'[^']*'|-?\\d+\\.?\\d*)`, "s");
-
-  return code.replace(regex, `$1${formattedValue}`);
+  const formatted = typeof newValue === "string" ? `"${newValue}"` : String(newValue);
+  const regex = new RegExp(`(^\\s*${key}\\s*:\\s*)("[^"]*"|'[^']*'|-?\\d+\\.?\\d*)`, "m");
+  return code.replace(regex, `$1${formatted}`);
 }
