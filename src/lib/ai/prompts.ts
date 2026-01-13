@@ -105,6 +105,40 @@ export default function Animation({
 - Use transform for performance (translate, scale, rotate)
 - Layer multiple animations for complex effects
 
+## Clarifying Questions
+When a user's request is ambiguous or could benefit from clarification, you can ask a question before generating code. Use this exact format:
+
+<<<QUESTION_JSON>>>
+{
+  "header": "Category",
+  "question": "Your question here?",
+  "options": [
+    { "label": "Option 1", "description": "Brief description" },
+    { "label": "Option 2", "description": "Brief description" }
+  ]
+}
+<<<END_QUESTION_JSON>>>
+
+Guidelines for questions:
+- Only ask when genuinely needed (not for simple, clear requests)
+- Limit to 2-4 options
+- Keep option labels short (2-4 words)
+- Descriptions are optional but helpful
+- After receiving an answer, either ask another follow-up question or generate the code
+
+Example question:
+<<<QUESTION_JSON>>>
+{
+  "header": "Animation Style",
+  "question": "What style of fade animation would you like?",
+  "options": [
+    { "label": "Fade In", "description": "Gradually appear from transparent" },
+    { "label": "Fade Out", "description": "Gradually disappear to transparent" },
+    { "label": "Cross Fade", "description": "Smooth transition between states" }
+  ]
+}
+<<<END_QUESTION_JSON>>>
+
 ## Instructions
 Generate animations based on user requests. When the user asks to modify an existing animation, make targeted changes while preserving the overall structure and style. Keep the code clean and readable.`;
 

@@ -2,10 +2,24 @@
 
 import { useState, useCallback } from "react";
 
+export interface QuestionOption {
+  id: string;
+  label: string;
+  description?: string;
+}
+
+export interface QuestionData {
+  header?: string;
+  question: string;
+  options: QuestionOption[];
+}
+
 export interface Message {
   id: string;
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "question";
   content: string;
+  questionData?: QuestionData;
+  answered?: boolean;
 }
 
 export interface MediaContext {
@@ -19,6 +33,26 @@ interface UseAnimationChatOptions {
   onCodeGenerated?: (code: string) => void;
   currentCode?: string;
   media?: MediaContext[];
+}
+
+function parseQuestionResponse(content: string): QuestionData | null {
+  const match = content.match(/<<<QUESTION_JSON>>>([\s\S]*?)<<<END_QUESTION_JSON>>>/);
+  if (!match) return null;
+
+  try {
+    const data = JSON.parse(match[1].trim());
+    return {
+      header: data.header,
+      question: data.question,
+      options: data.options.map((opt: { label: string; description?: string }, idx: number) => ({
+        id: `opt-${idx}`,
+        label: opt.label,
+        description: opt.description,
+      })),
+    };
+  } catch {
+    return null;
+  }
 }
 
 export function useAnimationChat({ onCodeGenerated, currentCode, media = [] }: UseAnimationChatOptions = {}) {
@@ -45,7 +79,7 @@ export function useAnimationChat({ onCodeGenerated, currentCode, media = [] }: U
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: [...messages, userMessage].map((m) => ({
-            role: m.role,
+            role: m.role === "question" ? "assistant" : m.role,
             content: m.content,
           })),
           currentCode,
@@ -85,10 +119,22 @@ export function useAnimationChat({ onCodeGenerated, currentCode, media = [] }: U
         );
       }
 
-      // Extract code from the response
-      const codeMatch = fullContent.match(/```tsx\n([\s\S]*?)```/);
-      if (codeMatch && onCodeGenerated) {
-        onCodeGenerated(codeMatch[1].trim());
+      // Check if response contains a question
+      const questionData = parseQuestionResponse(fullContent);
+      if (questionData) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMessage.id
+              ? { ...m, role: "question", questionData, content: questionData.question }
+              : m
+          )
+        );
+      } else {
+        // Extract code from the response
+        const codeMatch = fullContent.match(/```tsx\n([\s\S]*?)```/);
+        if (codeMatch && onCodeGenerated) {
+          onCodeGenerated(codeMatch[1].trim());
+        }
       }
     } catch (error) {
       console.error("Chat error:", error);
@@ -102,6 +148,19 @@ export function useAnimationChat({ onCodeGenerated, currentCode, media = [] }: U
       setIsLoading(false);
     }
   }, [messages, currentCode, media, onCodeGenerated, isLoading]);
+
+  const answerQuestion = useCallback(
+    (questionId: string, option: QuestionOption) => {
+      // Mark the question as answered
+      setMessages((prev) =>
+        prev.map((m) => (m.id === questionId ? { ...m, answered: true } : m))
+      );
+
+      // Send the selected option as a user message
+      sendMessage(option.label);
+    },
+    [sendMessage]
+  );
 
   const handleSubmit = useCallback(
     (e?: { preventDefault?: () => void }) => {
@@ -118,5 +177,6 @@ export function useAnimationChat({ onCodeGenerated, currentCode, media = [] }: U
     isLoading,
     sendMessage,
     handleSubmit,
+    answerQuestion,
   };
 }
