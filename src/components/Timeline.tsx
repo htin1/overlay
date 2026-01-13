@@ -2,7 +2,7 @@
 
 import React, { useRef, useCallback, memo, useState } from "react";
 import { PlayerRef } from "@remotion/player";
-import type { Overlay, TextOverlayData } from "@/overlays/registry";
+import type { Overlay } from "@/overlays";
 import { usePlayerFrame } from "../hooks/usePlayerFrame";
 import { useDrag } from "../hooks/useDrag";
 import { ZoomIn, ZoomOut } from "lucide-react";
@@ -186,10 +186,8 @@ const Track = memo(function Track({
   onUpdateTiming: (start: number, end: number) => void;
   onSeek: (frame: number) => void;
 }) {
-  const colors = OVERLAY_COLORS[overlay.type];
-  const label = overlay.type === "text"
-    ? (overlay as TextOverlayData).text?.slice(0, 12) || "Text"
-    : overlay.type.charAt(0).toUpperCase() + overlay.type.slice(1);
+  const colors = OVERLAY_COLORS[overlay.type as keyof typeof OVERLAY_COLORS];
+  const label = overlay.prompt?.slice(0, 12) || "Layer";
 
   return (
     <div className="flex border-b border-zinc-200 dark:border-white/5 hover:bg-zinc-100/50 dark:hover:bg-white/[0.02]">
@@ -228,7 +226,7 @@ const Clip = memo(function Clip({
   onUpdateTiming: (start: number, end: number) => void;
 }) {
   const initial = useRef({ startFrame: 0, endFrame: 0 });
-  const colors = OVERLAY_COLORS[overlay.type];
+  const colors = OVERLAY_COLORS[overlay.type as keyof typeof OVERLAY_COLORS];
   const left = overlay.startFrame * pixelsPerFrame;
   const width = Math.max((overlay.endFrame - overlay.startFrame) * pixelsPerFrame, 20);
 
@@ -268,7 +266,7 @@ const Clip = memo(function Clip({
       <div className="absolute left-0 top-0 w-1.5 h-full cursor-ew-resize hover:bg-black/10 dark:hover:bg-white/20 rounded-l" onMouseDown={(e) => handleMouseDown(e, "left")} />
       <div className="absolute inset-0 flex items-center justify-center px-2">
         <span className="text-[10px] text-zinc-700 dark:text-white/70 truncate select-none">
-          {overlay.type === "text" ? (overlay as TextOverlayData).text?.slice(0, 20) : overlay.type.charAt(0).toUpperCase() + overlay.type.slice(1)}
+          {overlay.prompt?.slice(0, 20) || "Layer"}
         </span>
       </div>
       <div className="absolute right-0 top-0 w-1.5 h-full cursor-ew-resize hover:bg-black/10 dark:hover:bg-white/20 rounded-r" onMouseDown={(e) => handleMouseDown(e, "right")} />

@@ -1,6 +1,6 @@
 import { AbsoluteFill, Sequence } from "remotion";
 import { OverlayItem } from "./OverlayItem";
-import type { Overlay } from "@/overlays/registry";
+import type { Overlay } from "@/overlays";
 
 export interface CompositionProps {
   overlays?: Overlay[];

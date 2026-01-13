@@ -1,5 +1,4 @@
-import { useOverlayAnimation } from "./utils";
-import { getOverlayDefinition, type Overlay, type BaseOverlay } from "@/overlays/registry";
+import { getOverlayDefinition, type Overlay } from "@/overlays";
 
 interface Props {
   overlay: Overlay;
@@ -16,17 +15,8 @@ const glassStyle = {
 };
 
 export function OverlayItem({ overlay, durationInFrames }: Props) {
-  const { opacity, transform } = useOverlayAnimation(
-    overlay.enterAnimation || "fade",
-    overlay.exitAnimation || "none",
-    durationInFrames
-  );
-
   const definition = getOverlayDefinition(overlay.type);
   if (!definition) return null;
-
-  const isTextType = overlay.type === "text";
-  const isTypingText = overlay.type === "typing-text";
 
   const baseStyle: React.CSSProperties = {
     position: "absolute",
@@ -34,19 +24,13 @@ export function OverlayItem({ overlay, durationInFrames }: Props) {
     top: `${overlay.y}%`,
     width: `${overlay.w}%`,
     height: `${overlay.h}%`,
-    opacity,
-    transform,
     overflow: "hidden",
     ...(overlay.glass ? glassStyle : {}),
-    // Text overlay needs flex centering
-    ...(isTextType ? { display: "flex", alignItems: "center", justifyContent: "center" } : {}),
-    // Typing text needs transparent background (has its own window chrome)
-    ...(isTypingText ? { background: "transparent", border: "none", backdropFilter: "none" } : {}),
   };
 
   return (
     <div style={baseStyle}>
-      {definition.render({ overlay: overlay as BaseOverlay, durationInFrames })}
+      {definition.render({ overlay, durationInFrames })}
     </div>
   );
 }

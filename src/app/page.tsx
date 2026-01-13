@@ -4,15 +4,13 @@ import { Player, PlayerRef } from "@remotion/player";
 import { useState, useRef, useCallback } from "react";
 import { Minus, Plus } from "lucide-react";
 import { VideoComposition } from "../remotion/Composition";
-import { type Overlay, isMediaOverlay } from "@/overlays/registry";
+import { type Overlay, codeOverlay } from "@/overlays";
 import { DraggableOverlay } from "../components/DraggableOverlay";
 import { Timeline } from "../components/Timeline";
-import { MediaHandle } from "../components/MediaHandle";
 import { TopToolbar } from "../components/TopToolbar";
-import { LeftPanel } from "../components/LeftPanel";
+import { LeftPanel, type MediaItem } from "../components/LeftPanel";
 import { RightPanel } from "../components/RightPanel";
 import { FPS } from "../lib/constants";
-import { createMedia, createText } from "../lib/utils";
 import { useHistory } from "../hooks/useHistory";
 import { useTheme } from "../hooks/useTheme";
 
@@ -25,6 +23,7 @@ export default function Home() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [exporting, setExporting] = useState(false);
+  const [media, setMedia] = useState<MediaItem[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<PlayerRef>(null);
 
@@ -44,10 +43,10 @@ export default function Home() {
     if (selectedId === id) setSelectedId(null);
   }, [setOverlays, selectedId]);
 
-  const add = useCallback((type: "media" | "text") => {
-    const o = type === "media" ? createMedia() : createText();
-    setOverlays((prev) => [...prev, o]);
-    setSelectedId(o.id);
+  const addLayer = useCallback(() => {
+    const layer = codeOverlay.create({ prompt: "" });
+    setOverlays((prev) => [...prev, layer]);
+    setSelectedId(layer.id);
   }, [setOverlays]);
 
   const toggleVisibility = useCallback((id: string) => {
@@ -55,6 +54,14 @@ export default function Home() {
       o.id === id ? { ...o, visible: o.visible !== false ? false : true } as Overlay : o
     ));
   }, [setOverlays]);
+
+  const addMedia = useCallback((item: MediaItem) => {
+    setMedia((prev) => [...prev, item]);
+  }, []);
+
+  const removeMedia = useCallback((id: string) => {
+    setMedia((prev) => prev.filter((m) => m.id !== id));
+  }, []);
 
   const exportVideo = async () => {
     setExporting(true);
@@ -123,14 +130,18 @@ export default function Home() {
             selectedId={selectedId}
             onSelect={setSelectedId}
             onToggleVisibility={toggleVisibility}
-            onAddOverlay={add}
+            onAddLayer={addLayer}
             onReorder={setOverlays}
+            media={media}
+            onAddMedia={addMedia}
+            onRemoveMedia={removeMedia}
           />
           {selected && (
             <RightPanel
               overlay={selected}
               onUpdate={(data) => update(selected.id, data)}
               onRemove={() => remove(selected.id)}
+              media={media}
             />
           )}
         </div>
@@ -168,13 +179,6 @@ export default function Home() {
                   containerRef={containerRef}
                 />
               ))}
-              {selected && isMediaOverlay(selected) && selected.glass && selected.visible !== false && (
-                <MediaHandle
-                  overlay={selected}
-                  onUpdate={(d) => update(selected.id, d)}
-                  containerRef={containerRef}
-                />
-              )}
             </div>
           </div>
 

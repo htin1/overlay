@@ -1,26 +1,49 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Plus, Eye, EyeOff, ImageIcon, Type, ChevronDown, GripVertical } from "lucide-react";
-import type { Overlay, TextOverlayData } from "@/overlays/registry";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Plus, Eye, EyeOff, GripVertical, Upload, Link, X, Film } from "lucide-react";
+import type { Overlay } from "@/overlays";
 import { OVERLAY_COLORS } from "@/lib/constants";
+
+export interface MediaItem {
+  id: string;
+  name: string;
+  url: string;
+  type: "image" | "video";
+  thumbnail?: string;
+}
 
 interface Props {
   overlays: Overlay[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   onToggleVisibility: (id: string) => void;
-  onAddOverlay: (type: "media" | "text") => void;
+  onAddLayer: () => void;
   onReorder: (overlays: Overlay[]) => void;
+  media: MediaItem[];
+  onAddMedia: (item: MediaItem) => void;
+  onRemoveMedia: (id: string) => void;
 }
 
-const btnIcon = "text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/10 p-1.5 rounded-lg cursor-pointer transition-all";
+type Tab = "media" | "layers";
 
 function getOverlayLabel(overlay: Overlay): string {
-  if (overlay.type === "text") {
-    return (overlay as TextOverlayData).text?.slice(0, 16) || "Text";
+  return overlay.prompt?.slice(0, 20) || "New layer";
+}
+
+function getMediaType(url: string): "image" | "video" {
+  const ext = url.split(".").pop()?.toLowerCase() || "";
+  if (["mp4", "webm", "mov", "avi"].includes(ext)) return "video";
+  return "image";
+}
+
+function getFileName(url: string): string {
+  try {
+    const pathname = new URL(url).pathname;
+    return pathname.split("/").pop() || "media";
+  } catch {
+    return url.slice(0, 20);
   }
-  return overlay.type.split("-").map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
 }
 
 export function LeftPanel({
@@ -28,24 +51,81 @@ export function LeftPanel({
   selectedId,
   onSelect,
   onToggleVisibility,
-  onAddOverlay,
+  onAddLayer,
   onReorder,
+  media,
+  onAddMedia,
+  onRemoveMedia,
 }: Props) {
-  const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<Tab>("layers");
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
-  const addMenuRef = useRef<HTMLDivElement>(null);
+  const [urlInput, setUrlInput] = useState("");
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAddUrl = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (urlInput.trim()) {
+      const url = urlInput.trim();
+      onAddMedia({
+        id: crypto.randomUUID(),
+        name: getFileName(url),
+        url,
+        type: getMediaType(url),
+      });
+      setUrlInput("");
+    }
+  };
+
+  const handleFileUpload = useCallback((files: FileList | null) => {
+    if (!files) return;
+    Array.from(files).forEach((file) => {
+      if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
+        const url = URL.createObjectURL(file);
+        onAddMedia({
+          id: crypto.randomUUID(),
+          name: file.name,
+          url,
+          type: file.type.startsWith("video/") ? "video" : "image",
+        });
+      }
+    });
+  }, [onAddMedia]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingFile(false);
+    handleFileUpload(e.dataTransfer.files);
+  }, [handleFileUpload]);
+
+  const handlePaste = useCallback((e: ClipboardEvent) => {
+    if (activeTab !== "media") return;
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of items) {
+      if (item.type.startsWith("image/") || item.type.startsWith("video/")) {
+        const file = item.getAsFile();
+        if (file) {
+          const url = URL.createObjectURL(file);
+          onAddMedia({
+            id: crypto.randomUUID(),
+            name: file.name || "pasted-media",
+            url,
+            type: item.type.startsWith("video/") ? "video" : "image",
+          });
+        }
+      }
+    }
+  }, [activeTab, onAddMedia]);
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) {
-        setAddMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    document.addEventListener("paste", handlePaste);
+    return () => document.removeEventListener("paste", handlePaste);
+  }, [handlePaste]);
 
+  // Layer drag handlers
   const handleDragStart = (e: React.DragEvent, id: string) => {
     setDraggedId(id);
     e.dataTransfer.effectAllowed = "move";
@@ -53,123 +133,222 @@ export function LeftPanel({
 
   const handleDragOver = (e: React.DragEvent, id: string) => {
     e.preventDefault();
-    if (id !== draggedId) {
-      setDragOverId(id);
-    }
+    if (id !== draggedId) setDragOverId(id);
   };
 
-  const handleDragLeave = () => {
-    setDragOverId(null);
-  };
-
-  const handleDrop = (e: React.DragEvent, targetId: string) => {
+  const handleLayerDrop = (e: React.DragEvent, targetId: string) => {
     e.preventDefault();
     if (!draggedId || draggedId === targetId) return;
-
     const draggedIndex = overlays.findIndex((o) => o.id === draggedId);
     const targetIndex = overlays.findIndex((o) => o.id === targetId);
-
     const newOverlays = [...overlays];
     const [removed] = newOverlays.splice(draggedIndex, 1);
     newOverlays.splice(targetIndex, 0, removed);
-
     onReorder(newOverlays);
-    setDraggedId(null);
-    setDragOverId(null);
-  };
-
-  const handleDragEnd = () => {
     setDraggedId(null);
     setDragOverId(null);
   };
 
   return (
     <div className="w-56 border-r border-zinc-200 dark:border-white/5 bg-zinc-50 dark:bg-zinc-900/50 flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="h-12 border-b border-zinc-200 dark:border-white/5 flex items-center justify-between px-4 shrink-0">
-        <span className="text-sm text-zinc-600 dark:text-zinc-400">Layers</span>
-        <div className="relative" ref={addMenuRef}>
-          <button
-            onClick={() => setAddMenuOpen(!addMenuOpen)}
-            className={`${btnIcon} flex items-center gap-1`}
-            title="Add layer"
-          >
-            <Plus size={14} />
-            <span className="text-xs">Add</span>
-            <ChevronDown size={12} />
-          </button>
-          {addMenuOpen && (
-            <div className="absolute right-0 top-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 rounded-lg py-1 min-w-[100px] shadow-lg z-50">
+      {/* Tabs */}
+      <div className="flex border-b border-zinc-200 dark:border-white/5">
+        <button
+          onClick={() => setActiveTab("media")}
+          className={`flex-1 py-2.5 text-xs font-medium transition-colors ${
+            activeTab === "media"
+              ? "text-zinc-900 dark:text-white border-b-2 border-violet-500"
+              : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+          }`}
+        >
+          Media
+        </button>
+        <button
+          onClick={() => setActiveTab("layers")}
+          className={`flex-1 py-2.5 text-xs font-medium transition-colors ${
+            activeTab === "layers"
+              ? "text-zinc-900 dark:text-white border-b-2 border-violet-500"
+              : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+          }`}
+        >
+          Layers
+        </button>
+      </div>
+
+      {/* Media Tab */}
+      {activeTab === "media" && (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* URL Input */}
+          <form onSubmit={handleAddUrl} className="p-2 border-b border-zinc-200 dark:border-white/5">
+            <div className="flex gap-1.5">
+              <div className="flex-1 relative">
+                <Link size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-400" />
+                <input
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  placeholder="Paste URL..."
+                  className="w-full pl-7 pr-2 py-1.5 text-xs bg-zinc-100 dark:bg-zinc-800 rounded-lg border-0 focus:ring-1 focus:ring-violet-500 outline-none"
+                />
+              </div>
               <button
-                onClick={() => { onAddOverlay("media"); setAddMenuOpen(false); }}
-                className="w-full px-3 py-1.5 text-left text-sm text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2 transition-colors"
+                type="submit"
+                disabled={!urlInput.trim()}
+                className="px-2 py-1.5 bg-violet-500 hover:bg-violet-600 disabled:opacity-30 text-white rounded-lg transition-colors text-xs"
               >
-                <ImageIcon size={12} /> Media
-              </button>
-              <button
-                onClick={() => { onAddOverlay("text"); setAddMenuOpen(false); }}
-                className="w-full px-3 py-1.5 text-left text-sm text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center gap-2 transition-colors"
-              >
-                <Type size={12} /> Text
+                Add
               </button>
             </div>
-          )}
-        </div>
-      </div>
+          </form>
 
-      {/* Layer List */}
-      <div className="flex-1 overflow-y-auto">
-        {overlays.length === 0 ? (
-          <div className="p-4 text-center text-zinc-400 text-sm">
-            No layers yet
-          </div>
-        ) : (
-          <div className="py-1">
-            {overlays.map((overlay) => {
-              const colors = OVERLAY_COLORS[overlay.type as keyof typeof OVERLAY_COLORS];
-              const isVisible = overlay.visible !== false;
-              const isSelected = selectedId === overlay.id;
-              const isDragging = draggedId === overlay.id;
-              const isDragOver = dragOverId === overlay.id;
-
-              return (
-                <div
-                  key={overlay.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, overlay.id)}
-                  onDragOver={(e) => handleDragOver(e, overlay.id)}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, overlay.id)}
-                  onDragEnd={handleDragEnd}
-                  className={`flex items-center gap-1 px-2 py-2 cursor-pointer transition-colors ${
-                    isSelected ? "bg-zinc-200 dark:bg-white/10" : "hover:bg-zinc-100 dark:hover:bg-white/5"
-                  } ${isDragging ? "opacity-50" : ""} ${isDragOver ? "border-t-2 border-blue-500" : ""}`}
-                  onClick={() => onSelect(overlay.id)}
+          {/* Drop Zone / Media List */}
+          <div
+            className="flex-1 overflow-y-auto"
+            onDragOver={(e) => { e.preventDefault(); setIsDraggingFile(true); }}
+            onDragLeave={() => setIsDraggingFile(false)}
+            onDrop={handleDrop}
+          >
+            {media.length === 0 ? (
+              <div
+                className={`m-2 p-4 border-2 border-dashed rounded-lg text-center transition-colors ${
+                  isDraggingFile
+                    ? "border-violet-500 bg-violet-500/10"
+                    : "border-zinc-200 dark:border-zinc-700"
+                }`}
+              >
+                <Upload size={20} className="mx-auto mb-2 text-zinc-400" />
+                <p className="text-xs text-zinc-500 mb-1">Drop files here</p>
+                <p className="text-[10px] text-zinc-400 mb-2">or paste from clipboard</p>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-xs text-violet-500 hover:text-violet-400"
                 >
-                  <div className="cursor-grab active:cursor-grabbing text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400">
-                    <GripVertical size={14} />
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleVisibility(overlay.id);
-                    }}
-                    className={`p-1 rounded transition-colors ${
-                      isVisible ? "text-zinc-500 hover:text-zinc-900 dark:hover:text-white" : "text-zinc-300 dark:text-zinc-600 hover:text-zinc-500"
-                    }`}
+                  Browse files
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,video/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handleFileUpload(e.target.files)}
+                />
+              </div>
+            ) : (
+              <div className="p-2 space-y-1">
+                {media.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 group"
                   >
-                    {isVisible ? <Eye size={14} /> : <EyeOff size={14} />}
-                  </button>
-                  <div className={`w-2 h-2 rounded-full ${colors?.dot || "bg-zinc-400"}`} />
-                  <span className={`text-sm truncate flex-1 ${isVisible ? "text-zinc-700 dark:text-zinc-300" : "text-zinc-400 dark:text-zinc-600"}`}>
-                    {getOverlayLabel(overlay)}
-                  </span>
-                </div>
-              );
-            })}
+                    <div className="w-10 h-10 rounded bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {item.type === "video" ? (
+                        <Film size={16} className="text-zinc-400" />
+                      ) : (
+                        <img src={item.url} alt="" className="w-full h-full object-cover" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-zinc-700 dark:text-zinc-300 truncate">{item.name}</p>
+                      <p className="text-[10px] text-zinc-400 uppercase">{item.type}</p>
+                    </div>
+                    <button
+                      onClick={() => onRemoveMedia(item.id)}
+                      className="p-1 text-zinc-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+
+                {/* Add more button */}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full p-2 border border-dashed border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-400 hover:text-zinc-600 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
+                >
+                  + Add more
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,video/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handleFileUpload(e.target.files)}
+                />
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Layers Tab */}
+      {activeTab === "layers" && (
+        <>
+          {/* Header */}
+          <div className="h-10 border-b border-zinc-200 dark:border-white/5 flex items-center justify-between px-3 shrink-0">
+            <span className="text-xs text-zinc-500">{overlays.length} layers</span>
+            <button
+              onClick={onAddLayer}
+              className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/10 p-1 rounded-lg transition-all"
+            >
+              <Plus size={14} />
+            </button>
+          </div>
+
+          {/* Layer List */}
+          <div className="flex-1 overflow-y-auto">
+            {overlays.length === 0 ? (
+              <div className="p-4 text-center">
+                <p className="text-zinc-400 text-sm mb-2">No layers yet</p>
+                <button
+                  onClick={onAddLayer}
+                  className="text-xs text-violet-500 hover:text-violet-400"
+                >
+                  + Create your first layer
+                </button>
+              </div>
+            ) : (
+              <div className="py-1">
+                {overlays.map((overlay) => {
+                  const colors = OVERLAY_COLORS[overlay.type as keyof typeof OVERLAY_COLORS];
+                  const isVisible = overlay.visible !== false;
+                  const isSelected = selectedId === overlay.id;
+
+                  return (
+                    <div
+                      key={overlay.id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, overlay.id)}
+                      onDragOver={(e) => handleDragOver(e, overlay.id)}
+                      onDragLeave={() => setDragOverId(null)}
+                      onDrop={(e) => handleLayerDrop(e, overlay.id)}
+                      onDragEnd={() => { setDraggedId(null); setDragOverId(null); }}
+                      className={`flex items-center gap-1 px-2 py-2 cursor-pointer transition-colors ${
+                        isSelected ? "bg-zinc-200 dark:bg-white/10" : "hover:bg-zinc-100 dark:hover:bg-white/5"
+                      } ${draggedId === overlay.id ? "opacity-50" : ""} ${dragOverId === overlay.id ? "border-t-2 border-violet-500" : ""}`}
+                      onClick={() => onSelect(overlay.id)}
+                    >
+                      <div className="cursor-grab active:cursor-grabbing text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400">
+                        <GripVertical size={14} />
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onToggleVisibility(overlay.id); }}
+                        className={`p-1 rounded transition-colors ${isVisible ? "text-zinc-500 hover:text-zinc-900 dark:hover:text-white" : "text-zinc-300 dark:text-zinc-600"}`}
+                      >
+                        {isVisible ? <Eye size={14} /> : <EyeOff size={14} />}
+                      </button>
+                      <div className={`w-2 h-2 rounded-full ${colors?.dot || "bg-violet-500"}`} />
+                      <span className={`text-sm truncate flex-1 ${isVisible ? "text-zinc-700 dark:text-zinc-300" : "text-zinc-400 dark:text-zinc-600"}`}>
+                        {getOverlayLabel(overlay)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
