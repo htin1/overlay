@@ -1,4 +1,5 @@
 import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
 import { streamText } from "ai";
 import { ANIMATION_SYSTEM_PROMPT, buildRefinementContext, buildMediaContext } from "@/lib/ai/prompts";
 
@@ -8,6 +9,15 @@ interface MediaItem {
   url: string;
   type: "image" | "video";
 }
+
+const MODELS = {
+  "sonnet-4.5": () => anthropic("claude-sonnet-4-5"),
+  "haiku-4.5": () => anthropic("claude-haiku-4-5"),
+  "gemini-3-flash": () => google("gemini-3-flash-preview"),
+  "gemini-3-pro": () => google("gemini-3-pro"),
+}
+
+const DEFAULT_MODEL = "haiku-4.5";
 
 export async function POST(req: Request) {
   const { messages, currentCode, media } = await req.json();
@@ -23,8 +33,10 @@ export async function POST(req: Request) {
     systemPrompt += "\n\n" + buildRefinementContext(currentCode);
   }
 
+  const model = MODELS[process.env.AI_MODEL as keyof typeof MODELS] ?? MODELS[DEFAULT_MODEL];
+
   const result = streamText({
-    model: anthropic("claude-haiku-4-5"),
+    model: model(),
     system: systemPrompt,
     messages,
   });
