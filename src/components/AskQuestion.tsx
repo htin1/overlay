@@ -18,7 +18,7 @@ interface Props {
 }
 
 const optionClass = (selected: boolean, disabled?: boolean) =>
-  `w-full text-left p-2.5 rounded-lg transition-colors flex items-center gap-2 border ${
+  `w-full text-left px-2 py-1.5 rounded-md transition-colors flex items-center gap-1.5 border ${
     selected
       ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-400"
       : "bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 border-transparent"
@@ -74,7 +74,7 @@ export function AskQuestion({ header, question, options, onSelect, disabled }: P
   }, [disabled, isTyping, options, selectedIndex, onSelect, totalOptions, startTyping]);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       {header && (
         <span className="inline-block px-1.5 py-0.5 text-[10px] text-zinc-400 border border-zinc-300 dark:border-zinc-600 rounded">
           {header}
@@ -83,7 +83,7 @@ export function AskQuestion({ header, question, options, onSelect, disabled }: P
 
       <p className="text-xs text-zinc-600 dark:text-zinc-300">{question}</p>
 
-      <div className="space-y-1 mt-2">
+      <div className="space-y-0.5 mt-1">
         {options.map((option, index) => (
           <button
             key={option.id}
@@ -92,12 +92,12 @@ export function AskQuestion({ header, question, options, onSelect, disabled }: P
             className={optionClass(index === selectedIndex && !isTyping, disabled)}
           >
             <div className="flex-1 min-w-0">
-              <span className="text-xs font-medium block">{option.label}</span>
+              <span className="text-[11px] font-medium block">{option.label}</span>
               {option.description && (
-                <span className="text-[10px] text-zinc-400 block mt-0.5">{option.description}</span>
+                <span className="text-[10px] text-zinc-400 block leading-tight">{option.description}</span>
               )}
             </div>
-            {index === selectedIndex && !isTyping && <ChevronRight size={12} />}
+            {index === selectedIndex && !isTyping && <ChevronRight size={10} />}
           </button>
         ))}
 
@@ -117,7 +117,7 @@ export function AskQuestion({ header, question, options, onSelect, disabled }: P
                 }
               }}
               placeholder="Type your answer..."
-              className="flex-1 bg-transparent text-xs outline-none text-zinc-900 dark:text-white placeholder:text-zinc-400"
+              className="flex-1 bg-transparent text-[11px] outline-none text-zinc-900 dark:text-white placeholder:text-zinc-400"
               autoFocus
             />
             <button
@@ -125,7 +125,7 @@ export function AskQuestion({ header, question, options, onSelect, disabled }: P
               disabled={!customText.trim()}
               className="p-1 text-indigo-500 hover:text-indigo-600 disabled:opacity-30"
             >
-              <CornerDownLeft size={14} />
+              <CornerDownLeft size={12} />
             </button>
           </div>
         ) : (
@@ -134,23 +134,22 @@ export function AskQuestion({ header, question, options, onSelect, disabled }: P
             disabled={disabled}
             className={optionClass(selectedIndex === options.length, disabled)}
           >
-            <span className="text-xs text-zinc-400 italic">Type something...</span>
-            {selectedIndex === options.length && <ChevronRight size={12} className="ml-auto" />}
+            <span className="text-[11px] text-zinc-400 italic">Type something...</span>
+            {selectedIndex === options.length && <ChevronRight size={10} className="ml-auto" />}
           </button>
         )}
       </div>
 
-      <p className="text-[10px] text-zinc-400 mt-2">
+      <p className="text-[9px] text-zinc-400 mt-1">
         {isTyping ? (
           <>
-            <kbd className="px-1 py-0.5 bg-zinc-200 dark:bg-zinc-700 rounded text-[9px]">Enter</kbd> submit{" "}
-            <kbd className="px-1 py-0.5 bg-zinc-200 dark:bg-zinc-700 rounded text-[9px]">Esc</kbd> cancel
+            <kbd className="px-0.5 bg-zinc-200 dark:bg-zinc-700 rounded text-[9px]">Enter</kbd> submit{" "}
+            <kbd className="px-0.5 bg-zinc-200 dark:bg-zinc-700 rounded text-[9px]">Esc</kbd> cancel
           </>
         ) : !disabled && (
           <>
-            <kbd className="px-1 py-0.5 bg-zinc-200 dark:bg-zinc-700 rounded text-[9px]">↑↓</kbd> navigate{" "}
-            <kbd className="px-1 py-0.5 bg-zinc-200 dark:bg-zinc-700 rounded text-[9px]">Enter</kbd> select{" "}
-            · or start typing
+            <kbd className="px-0.5 bg-zinc-200 dark:bg-zinc-700 rounded text-[9px]">↑↓</kbd> navigate{" "}
+            <kbd className="px-0.5 bg-zinc-200 dark:bg-zinc-700 rounded text-[9px]">Enter</kbd> select
           </>
         )}
       </p>

@@ -22,10 +22,10 @@ interface Props {
 type Tab = "chat" | "settings" | "code";
 
 const SUGGESTIONS = [
-  { label: "Text animation", icon: Type, prompt: "Large white text that says 'Hello World' centered on screen with a fade-in animation" },
-  { label: "Image with zoom", icon: Image, prompt: "Display an image centered with a subtle zoom-in animation" },
-  { label: "Video background", icon: Video, prompt: "Full-screen video background with a fade-in effect" },
-  { label: "Bouncing ball", icon: Zap, prompt: "A colorful bouncing ball animation that bounces across the screen" },
+  { label: "Subscribe counter", icon: Zap, prompt: "YouTube-style subscribe button with animated follower count that ticks up from 999K to 1M" },
+  { label: "Typing text reveal", icon: Type, prompt: "Typewriter effect that types out 'Coming Soon' with a blinking cursor" },
+  { label: "Notification popup", icon: Image, prompt: "macOS-style notification that slides in from top-right with app icon and message" },
+  { label: "Logo stinger", icon: Video, prompt: "Animated logo reveal with particles that converge into the center and form a glowing icon" },
 ];
 
 const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [

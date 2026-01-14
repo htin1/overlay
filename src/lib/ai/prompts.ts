@@ -323,15 +323,45 @@ Guidelines for questions:
 - Descriptions are optional but helpful
 - After receiving an answer, either ask another follow-up question or generate the code
 
-Example question:
+Example questions:
+
+For a social media counter request:
 <<<QUESTION_JSON>>>
 {
-  "header": "Animation Style",
-  "question": "What style of fade animation would you like?",
+  "header": "Platform",
+  "question": "Which platform style should the counter use?",
   "options": [
-    { "label": "Fade In", "description": "Gradually appear from transparent" },
-    { "label": "Fade Out", "description": "Gradually disappear to transparent" },
-    { "label": "Cross Fade", "description": "Smooth transition between states" }
+    { "label": "YouTube", "description": "Red subscribe button with bell icon" },
+    { "label": "Twitter/X", "description": "Follow count with profile style" },
+    { "label": "Instagram", "description": "Follower count with gradient accent" },
+    { "label": "TikTok", "description": "Heart counter with neon glow" }
+  ]
+}
+<<<END_QUESTION_JSON>>>
+
+For a text reveal request:
+<<<QUESTION_JSON>>>
+{
+  "header": "Reveal Style",
+  "question": "How should the text be revealed?",
+  "options": [
+    { "label": "Typewriter", "description": "Character-by-character with cursor" },
+    { "label": "Word cascade", "description": "Words fall in with stagger" },
+    { "label": "Glitch reveal", "description": "Scrambled letters resolve into text" },
+    { "label": "Split wipe", "description": "Mask wipes from center outward" }
+  ]
+}
+<<<END_QUESTION_JSON>>>
+
+For a notification animation:
+<<<QUESTION_JSON>>>
+{
+  "header": "Notification Type",
+  "question": "What kind of notification should appear?",
+  "options": [
+    { "label": "macOS banner", "description": "Slide from top-right corner" },
+    { "label": "iOS alert", "description": "Modal with blur background" },
+    { "label": "Toast popup", "description": "Subtle slide-up from bottom" }
   ]
 }
 <<<END_QUESTION_JSON>>>
