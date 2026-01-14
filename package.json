@@ -29,6 +29,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "remotion": "4.0.396",
+    "simple-icons": "^16.5.0",
     "sucrase": "^3.35.1",
     "tailwind-merge": "^3.4.0"
   },

@@ -1,6 +1,12 @@
 import { transform } from "sucrase";
 import React from "react";
+import * as LucideIcons from "lucide-react";
+import * as SimpleIcons from "simple-icons";
 import { interpolate, spring } from "./remotion-stubs";
+
+// Pre-compute icon keys once at module load (filter out reserved words)
+const LUCIDE_KEYS = Object.keys(LucideIcons).filter(k => k !== "default" && !k.startsWith("_"));
+const SIMPLE_ICON_KEYS = Object.keys(SimpleIcons).filter(k => k.startsWith("si"));
 
 export interface AnimationProps {
   frame: number;
@@ -25,7 +31,9 @@ export function evaluateAnimationCode(code: string): EvaluationResult {
     // Remove import statements - we'll provide these via context
     let processedCode = code
       .replace(/import\s+\{[^}]+\}\s+from\s+["']remotion["'];?\n?/g, "")
-      .replace(/import\s+.*\s+from\s+["']remotion["'];?\n?/g, "");
+      .replace(/import\s+.*\s+from\s+["']remotion["'];?\n?/g, "")
+      .replace(/import\s+\{[^}]+\}\s+from\s+["']lucide-react["'];?\n?/g, "")
+      .replace(/import\s+\{[^}]+\}\s+from\s+["']simple-icons["'];?\n?/g, "");
 
     // Convert "export default function Animation" to "function Animation"
     // and store a reference to return it
@@ -40,9 +48,10 @@ export function evaluateAnimationCode(code: string): EvaluationResult {
       production: true,
     });
 
-    // Wrap in a function that returns the component
-    // We need to capture the Animation function
+    // Wrap code with icon destructuring and return the Animation component
     const wrappedCode = `
+      const { ${LUCIDE_KEYS.join(", ")} } = LucideIcons;
+      const { ${SIMPLE_ICON_KEYS.join(", ")} } = SimpleIcons;
       ${transpiledCode}
       return typeof Animation !== 'undefined' ? Animation : null;
     `;
@@ -52,11 +61,13 @@ export function evaluateAnimationCode(code: string): EvaluationResult {
       "React",
       "interpolate",
       "spring",
+      "LucideIcons",
+      "SimpleIcons",
       wrappedCode
     );
 
     // Execute and get the component
-    const Component = createComponent(React, interpolate, spring);
+    const Component = createComponent(React, interpolate, spring, LucideIcons, SimpleIcons);
 
     if (!Component) {
       return {
