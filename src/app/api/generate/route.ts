@@ -17,7 +17,7 @@ const MODELS = {
   "gemini-3-pro": () => google("gemini-3-pro"),
 }
 
-const DEFAULT_MODEL = "haiku-4.5";
+const DEFAULT_MODEL = "sonnet-4.5";
 
 export async function POST(req: Request) {
   const { messages, currentCode, media } = await req.json();

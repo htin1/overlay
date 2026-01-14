@@ -39,14 +39,13 @@ export function Timeline({
 
   return (
     <div className="flex flex-col bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-200 dark:border-white/5 min-w-0">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-white/5">
-        <span className="text-xs text-zinc-500 uppercase tracking-widest">Timeline</span>
-        <div className="flex items-center gap-3">
+      {/* Header - zoom controls only */}
+      <div className="flex items-center justify-end px-4 py-2 border-b border-zinc-200 dark:border-white/5">
+        <div className="flex items-center gap-2">
           <ZoomOut size={12} className="text-zinc-400" />
           <ZoomSlider zoom={zoom} onZoomChange={setZoom} />
           <ZoomIn size={12} className="text-zinc-400" />
-          <span className="text-xs text-zinc-500 w-10 text-right">{Math.round(zoom * 100)}%</span>
+          <span className="text-[10px] text-zinc-500 w-10 text-right">{Math.round(zoom * 100)}%</span>
         </div>
       </div>
 

@@ -32,10 +32,10 @@ export default function Home() {
   const visibleOverlays = overlays.filter((o) => o.visible !== false);
 
   const update = useCallback((id: string, data: Partial<Overlay>) =>
-    setOverlays((prev) => prev.map((o) => (o.id === id ? { ...o, ...data } as Overlay : o))), [setOverlays]);
+    setOverlays((prev) => prev.map((o) => (o.id === id ? { ...o, ...data } : o))), [setOverlays]);
 
   const updateTiming = useCallback((id: string, startFrame: number, endFrame: number) =>
-    setOverlays((prev) => prev.map((o) => (o.id === id ? { ...o, startFrame, endFrame } as Overlay : o))), [setOverlays]);
+    setOverlays((prev) => prev.map((o) => (o.id === id ? { ...o, startFrame, endFrame } : o))), [setOverlays]);
 
   const remove = useCallback((id: string) => {
     setOverlays((prev) => prev.filter((o) => o.id !== id));
@@ -50,17 +50,13 @@ export default function Home() {
 
   const toggleVisibility = useCallback((id: string) => {
     setOverlays((prev) => prev.map((o) =>
-      o.id === id ? { ...o, visible: o.visible !== false ? false : true } as Overlay : o
+      o.id === id ? { ...o, visible: !o.visible } : o
     ));
   }, [setOverlays]);
 
-  const addMedia = useCallback((item: MediaItem) => {
-    setMedia((prev) => [...prev, item]);
-  }, []);
+  const addMedia = useCallback((item: MediaItem) => setMedia((prev) => [...prev, item]), []);
 
-  const removeMedia = useCallback((id: string) => {
-    setMedia((prev) => prev.filter((m) => m.id !== id));
-  }, []);
+  const removeMedia = useCallback((id: string) => setMedia((prev) => prev.filter((m) => m.id !== id)), []);
 
   const exportVideo = async () => {
     setExporting(true);
@@ -110,76 +106,81 @@ export default function Home() {
         onRedo={redo}
       />
 
-      {/* Main area: Panels + Canvas */}
+      {/* Main area */}
       <div className="flex-1 flex min-h-0">
-        {/* Left Panels - Layers + Properties */}
-        <div className="flex">
-          <LeftPanel
+        {/* Left section: Layers + Canvas + Timeline */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Top row: Left Panel + Canvas */}
+          <div className="flex-1 flex min-h-0">
+            {/* Left Panel - Layers & Media */}
+            <LeftPanel
+              overlays={overlays}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              onToggleVisibility={toggleVisibility}
+              onRemoveLayer={remove}
+              onAddLayer={addLayer}
+              onReorder={setOverlays}
+              media={media}
+              onAddMedia={addMedia}
+              onRemoveMedia={removeMedia}
+            />
+
+            {/* Canvas area */}
+            <main className="flex-1 flex flex-col items-center justify-center p-6 min-w-0 bg-zinc-100 dark:bg-zinc-900/30">
+              <div
+                ref={containerRef}
+                className="relative overflow-hidden bg-black shadow-lg w-full max-w-4xl"
+              >
+                <Player
+                  ref={playerRef}
+                  component={VideoComposition}
+                  inputProps={{ overlays: visibleOverlays, backgroundColor }}
+                  durationInFrames={totalFrames}
+                  fps={FPS}
+                  compositionWidth={1920}
+                  compositionHeight={1080}
+                  style={{ width: "100%" }}
+                  controls
+                  acknowledgeRemotionLicense
+                />
+                <div className="absolute inset-0 pointer-events-none">
+                  {visibleOverlays.map((o) => (
+                    <DraggableOverlay
+                      key={o.id}
+                      x={o.x} y={o.y} width={o.w} height={o.h}
+                      selected={selectedId === o.id}
+                      onSelect={() => setSelectedId(o.id)}
+                      onUpdate={(x, y, w, h) => update(o.id, { x, y, w, h })}
+                      containerRef={containerRef}
+                    />
+                  ))}
+                </div>
+              </div>
+            </main>
+          </div>
+
+          {/* Timeline */}
+          <Timeline
             overlays={overlays}
             selectedId={selectedId}
             onSelect={setSelectedId}
-            onToggleVisibility={toggleVisibility}
-            onRemoveLayer={remove}
-            onAddLayer={addLayer}
-            onReorder={setOverlays}
-            media={media}
-            onAddMedia={addMedia}
-            onRemoveMedia={removeMedia}
+            onUpdateTiming={updateTiming}
+            playerRef={playerRef}
+            totalFrames={totalFrames}
+            fps={FPS}
           />
-          {selected && (
-            <RightPanel
-              overlay={selected}
-              onUpdate={(data) => update(selected.id, data)}
-              onRemove={() => remove(selected.id)}
-              media={media}
-            />
-          )}
         </div>
 
-        {/* Canvas area */}
-        <main className="flex-1 flex flex-col items-center justify-center p-6 min-w-0 bg-zinc-100 dark:bg-zinc-900/30">
-          <div
-            ref={containerRef}
-            className="relative overflow-hidden bg-black shadow-lg w-full max-w-4xl"
-          >
-            <Player
-              ref={playerRef}
-              component={VideoComposition}
-              inputProps={{ overlays: visibleOverlays, backgroundColor }}
-              durationInFrames={totalFrames}
-              fps={FPS}
-              compositionWidth={1920}
-              compositionHeight={1080}
-              style={{ width: "100%" }}
-              controls
-              acknowledgeRemotionLicense
-            />
-            <div className="absolute inset-0 pointer-events-none">
-              {visibleOverlays.map((o) => (
-                <DraggableOverlay
-                  key={o.id}
-                  x={o.x} y={o.y} width={o.w} height={o.h}
-                  selected={selectedId === o.id}
-                  onSelect={() => setSelectedId(o.id)}
-                  onUpdate={(x, y, w, h) => update(o.id, { x, y, w, h })}
-                  containerRef={containerRef}
-                />
-              ))}
-            </div>
-          </div>
-        </main>
+        {/* Right Panel - Properties & Generation (full height) */}
+        <RightPanel
+          overlay={selected}
+          onUpdate={(data) => selected && update(selected.id, data)}
+          onRemove={() => selected && remove(selected.id)}
+          media={media}
+          onAddLayer={addLayer}
+        />
       </div>
-
-      {/* Timeline */}
-      <Timeline
-        overlays={overlays}
-        selectedId={selectedId}
-        onSelect={setSelectedId}
-        onUpdateTiming={updateTiming}
-        playerRef={playerRef}
-        totalFrames={totalFrames}
-        fps={FPS}
-      />
     </div>
   );
 }

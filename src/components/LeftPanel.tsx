@@ -66,37 +66,42 @@ export function LeftPanel({
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleAddUrl = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (urlInput.trim()) {
-      const url = urlInput.trim();
+  // Single upload function for files
+  const uploadFile = useCallback(async (file: File) => {
+    if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) return;
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/media", { method: "POST", body: formData });
+      if (!res.ok) throw new Error("Upload failed");
+      const { url } = await res.json();
       onAddMedia({
         id: crypto.randomUUID(),
-        name: getFileName(url),
+        name: file.name || "media",
         url,
-        type: getMediaType(url),
+        type: file.type.startsWith("video/") ? "video" : "image",
       });
-      setUrlInput("");
-    }
-  };
-
-  const handleFileUpload = useCallback(async (files: FileList | null) => {
-    if (!files) return;
-    for (const file of Array.from(files)) {
-      if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
-        const formData = new FormData();
-        formData.append("file", file);
-        const res = await fetch("/api/media", { method: "POST", body: formData });
-        const { url } = await res.json();
-        onAddMedia({
-          id: crypto.randomUUID(),
-          name: file.name,
-          url,
-          type: file.type.startsWith("video/") ? "video" : "image",
-        });
-      }
+    } catch (err) {
+      console.error("Upload error:", err);
     }
   }, [onAddMedia]);
+
+  const handleAddUrl = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!urlInput.trim()) return;
+    const url = urlInput.trim();
+    onAddMedia({
+      id: crypto.randomUUID(),
+      name: getFileName(url),
+      url,
+      type: getMediaType(url),
+    });
+    setUrlInput("");
+  };
+
+  const handleFileUpload = useCallback((files: FileList | null) => {
+    if (files) Array.from(files).forEach(uploadFile);
+  }, [uploadFile]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -104,29 +109,15 @@ export function LeftPanel({
     handleFileUpload(e.dataTransfer.files);
   }, [handleFileUpload]);
 
-  const handlePaste = useCallback(async (e: ClipboardEvent) => {
+  const handlePaste = useCallback((e: ClipboardEvent) => {
     if (activeTab !== "media") return;
     const items = e.clipboardData?.items;
     if (!items) return;
-
     for (const item of items) {
-      if (item.type.startsWith("image/") || item.type.startsWith("video/")) {
-        const file = item.getAsFile();
-        if (file) {
-          const formData = new FormData();
-          formData.append("file", new File([file], file.name || "pasted-media", { type: file.type }));
-          const res = await fetch("/api/media", { method: "POST", body: formData });
-          const { url } = await res.json();
-          onAddMedia({
-            id: crypto.randomUUID(),
-            name: file.name || "pasted-media",
-            url,
-            type: item.type.startsWith("video/") ? "video" : "image",
-          });
-        }
-      }
+      const file = item.getAsFile();
+      if (file) uploadFile(file);
     }
-  }, [activeTab, onAddMedia]);
+  }, [activeTab, uploadFile]);
 
   useEffect(() => {
     document.addEventListener("paste", handlePaste);
@@ -237,14 +228,6 @@ export function LeftPanel({
                   </form>
                 </div>
 
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*,video/*"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => handleFileUpload(e.target.files)}
-                />
               </div>
             ) : (
               <div className="p-2 space-y-1">
@@ -272,24 +255,23 @@ export function LeftPanel({
                     </button>
                   </div>
                 ))}
-
-                {/* Add more button */}
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="w-full p-2 border border-dashed border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-400 hover:text-zinc-600 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
                 >
                   + Add more
                 </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*,video/*"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => handleFileUpload(e.target.files)}
-                />
               </div>
             )}
+            {/* Single shared file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*"
+              multiple
+              className="hidden"
+              onChange={(e) => handleFileUpload(e.target.files)}
+            />
           </div>
         </div>
       )}
@@ -336,7 +318,7 @@ export function LeftPanel({
                       onDragLeave={() => setDragOverId(null)}
                       onDrop={(e) => handleLayerDrop(e, overlay.id)}
                       onDragEnd={() => { setDraggedId(null); setDragOverId(null); }}
-                      className={`flex items-center gap-1 px-2 py-2 cursor-pointer transition-colors ${
+                      className={`group flex items-center gap-1.5 px-2 py-2 cursor-pointer transition-colors ${
                         isSelected ? "bg-zinc-200 dark:bg-white/10" : "hover:bg-zinc-100 dark:hover:bg-white/5"
                       } ${draggedId === overlay.id ? "opacity-50" : ""} ${dragOverId === overlay.id ? "border-t-2 border-indigo-500" : ""}`}
                       onClick={() => onSelect(overlay.id)}
@@ -344,22 +326,26 @@ export function LeftPanel({
                       <div className="cursor-grab active:cursor-grabbing text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400">
                         <GripVertical size={14} />
                       </div>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onToggleVisibility(overlay.id); }}
-                        className={`p-1 rounded transition-colors ${isVisible ? "text-zinc-500 hover:text-zinc-900 dark:hover:text-white" : "text-zinc-300 dark:text-zinc-600"}`}
-                      >
-                        {isVisible ? <Eye size={14} /> : <EyeOff size={14} />}
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onRemoveLayer(overlay.id); }}
-                        className="p-1 rounded transition-colors text-zinc-400 hover:text-red-500"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                      <div className={`w-2 h-2 rounded-full ${colors?.dot || "bg-indigo-500"}`} />
-                      <span className={`text-sm truncate flex-1 ${isVisible ? "text-zinc-700 dark:text-zinc-300" : "text-zinc-400 dark:text-zinc-600"}`}>
+                      <div className={`w-2 h-2 rounded-full shrink-0 ${colors?.dot || "bg-indigo-500"}`} />
+                      <span className={`text-sm truncate flex-1 ${isVisible ? "text-zinc-700 dark:text-zinc-300" : "text-zinc-400 dark:text-zinc-600 line-through"}`}>
                         {getOverlayLabel(overlay)}
                       </span>
+                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onToggleVisibility(overlay.id); }}
+                          className={`p-1 rounded transition-colors ${isVisible ? "text-zinc-400 hover:text-zinc-900 dark:hover:text-white" : "text-zinc-300 dark:text-zinc-600 hover:text-zinc-500"}`}
+                          title={isVisible ? "Hide" : "Show"}
+                        >
+                          {isVisible ? <Eye size={14} /> : <EyeOff size={14} />}
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onRemoveLayer(overlay.id); }}
+                          className="p-1 rounded transition-colors text-zinc-400 hover:text-red-500"
+                          title="Delete"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
