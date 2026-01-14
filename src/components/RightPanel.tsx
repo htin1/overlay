@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Trash2, Code2, Sparkles, Send, Loader2, Type, Image, Video, Zap, Wand2, Check, Settings } from "lucide-react";
+import { Trash2, Code2, Send, Loader2, Type, Image, Video, Zap, Wand2, Check, Settings } from "lucide-react";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { vscodeDark } from "@uiw/codemirror-theme-vscode";
@@ -214,7 +214,6 @@ export function RightPanel({ overlay, onUpdate, onRemove, media = [] }: Props) {
               {messages.length === 0 && (
                 <div className="space-y-3">
                   <div className="text-center pt-4 pb-2">
-                    <Sparkles size={20} className="mx-auto mb-2 text-indigo-500" />
                     <p className="text-xs text-zinc-500">
                       Describe the animation you want
                     </p>

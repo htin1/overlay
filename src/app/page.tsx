@@ -15,10 +15,12 @@ import { useTheme } from "../hooks/useTheme";
 
 const MIN_DURATION = 300;
 
+const defaultOverlay = codeOverlay.create({ prompt: "" });
+
 export default function Home() {
   const { theme } = useTheme();
-  const { state: overlays, set: setOverlays, undo, redo, canUndo, canRedo } = useHistory<Overlay[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { state: overlays, set: setOverlays, undo, redo, canUndo, canRedo } = useHistory<Overlay[]>([defaultOverlay]);
+  const [selectedId, setSelectedId] = useState<string | null>(defaultOverlay.id);
   const [exporting, setExporting] = useState(false);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
