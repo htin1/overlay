@@ -19,6 +19,8 @@ export function TopToolbar({ onExport, exporting, canUndo, canRedo, onUndo, onRe
 
   return (
     <div className="h-12 border-b border-zinc-200 dark:border-white/5 flex items-center justify-between px-4 bg-zinc-50 dark:bg-zinc-900/50">
+      <span className="text-sm font-semibold tracking-wide text-zinc-700 dark:text-zinc-300">OVERLAY</span>
+
       <div className="flex items-center gap-1">
         <button onClick={onUndo} disabled={!canUndo} className={btn} title="Undo">
           <Undo2 size={16} />
@@ -26,9 +28,7 @@ export function TopToolbar({ onExport, exporting, canUndo, canRedo, onUndo, onRe
         <button onClick={onRedo} disabled={!canRedo} className={btn} title="Redo">
           <Redo2 size={16} />
         </button>
-      </div>
-
-      <div className="flex items-center gap-1">
+        <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700 mx-1" />
         <button onClick={toggleTheme} className={btn} title={theme === "dark" ? "Light mode" : "Dark mode"}>
           {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
         </button>
