@@ -49,6 +49,7 @@ Define a \`CONFIG\` object at the top with user-adjustable values:
 
 \`\`\`tsx
 const CONFIG = {
+  durationFrames: 90, // REQUIRED: total animation duration in frames
   text: "Hello World",
   fontSize: 72,
   textColor: "#ffffff",
@@ -59,9 +60,13 @@ const CONFIG = {
 \`\`\`
 
 Rules:
+- **durationFrames is REQUIRED** - set to recommended duration for the animation (30 fps, so 90 = 3 seconds)
 - Colors as hex strings ("#ffffff")
 - Durations in frames (30 fps, so 30 = 1 second)
 - Use descriptive camelCase names
+- For simple animations: 60-90 frames (2-3 sec)
+- For complex sequences: 120-180 frames (4-6 sec)
+- For looping animations: match the loop cycle
 
 ## Available Functions
 
@@ -233,6 +238,7 @@ const exitOpacity = interpolate(frame, [exitStart, durationInFrames], [1, 0], {
 import { interpolate, spring } from "remotion";
 
 const CONFIG = {
+  durationFrames: 90,
   text: "Hello World",
   fontSize: 72,
   textColor: "#ffffff",

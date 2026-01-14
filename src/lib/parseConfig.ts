@@ -72,3 +72,12 @@ export function updateConfigValue(code: string, key: string, newValue: string | 
   const regex = new RegExp(`(^\\s*${key}\\s*:\\s*)("[^"]*"|'[^']*'|-?\\d+\\.?\\d*)`, "m");
   return code.replace(regex, `$1${formatted}`);
 }
+
+export function parseDurationFrames(code: string): number | null {
+  const config = parseConfig(code);
+  const duration = config.find((e) => e.key === "durationFrames");
+  if (duration && typeof duration.value === "number") {
+    return duration.value;
+  }
+  return null;
+}
