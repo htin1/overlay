@@ -2,9 +2,9 @@ import { transform } from "sucrase";
 import React from "react";
 import * as LucideIcons from "lucide-react";
 import * as SimpleIcons from "simple-icons";
-import { interpolate, spring } from "./remotion-stubs";
+import { interpolate, spring, Easing } from "remotion";
 
-// Pre-compute icon keys once at module load (filter out reserved words)
+// Pre-compute keys once at module load
 const LUCIDE_KEYS = Object.keys(LucideIcons).filter(k => k !== "default" && !k.startsWith("_"));
 const SIMPLE_ICON_KEYS = Object.keys(SimpleIcons).filter(k => k.startsWith("si"));
 
@@ -28,18 +28,24 @@ export interface EvaluationResult {
  */
 export function evaluateAnimationCode(code: string): EvaluationResult {
   try {
-    // Remove import statements - we'll provide these via context
+    // Remove ALL import statements - we provide everything via context
+    // Handle single-line and multi-line imports
     let processedCode = code
-      .replace(/import\s+\{[^}]+\}\s+from\s+["']remotion["'];?\n?/g, "")
-      .replace(/import\s+.*\s+from\s+["']remotion["'];?\n?/g, "")
-      .replace(/import\s+\{[^}]+\}\s+from\s+["']lucide-react["'];?\n?/g, "")
-      .replace(/import\s+\{[^}]+\}\s+from\s+["']simple-icons["'];?\n?/g, "");
+      // Multi-line imports: import {\n  X,\n  Y\n} from 'z'
+      .replace(/import\s*\{[\s\S]*?\}\s*from\s*["'][^"']+["'];?/g, "")
+      // Single-line imports: import X from 'y', import * as X from 'y'
+      .replace(/import\s+.*?\s+from\s*["'][^"']+["'];?/g, "")
+      // Side-effect imports: import 'x'
+      .replace(/import\s*["'][^"']+["'];?/g, "");
 
-    // Convert "export default function Animation" to "function Animation"
-    // and store a reference to return it
+    // Convert "export default function X" to "function Animation"
+    // Handle any function name, not just "Animation"
     processedCode = processedCode
-      .replace(/export\s+default\s+function\s+Animation/g, "function Animation")
-      .replace(/export\s+default\s+Animation;?/g, "");
+      .replace(/export\s+default\s+function\s+(\w+)/g, "function Animation")
+      .replace(/export\s+default\s+\w+;?/g, "")
+      // Also handle any other export statements (for sub-components)
+      .replace(/export\s+function\s+/g, "function ")
+      .replace(/export\s+const\s+/g, "const ");
 
     // Transpile JSX to JavaScript
     const { code: transpiledCode } = transform(processedCode, {
@@ -48,10 +54,25 @@ export function evaluateAnimationCode(code: string): EvaluationResult {
       production: true,
     });
 
-    // Wrap code with icon destructuring and return the Animation component
+    // Find all si* icon references in the code
+    const siIconsUsed = [...new Set(
+      (transpiledCode.match(/\bsi[A-Z][a-zA-Z]*/g) || [])
+    )];
+
+    // Check for missing simple-icons before execution
+    const missingSiIcons = siIconsUsed.filter(icon => !SIMPLE_ICON_KEYS.includes(icon));
+    if (missingSiIcons.length > 0) {
+      return {
+        component: null,
+        error: `Missing simple-icons: ${missingSiIcons.join(", ")}. These icons don't exist in the simple-icons package. Use only available icons like: siGithub, siX, siInstagram, siYoutube, siSpotify, siDiscord, siFigma, siNotion, siReact, siVercel, siStripe`,
+      };
+    }
+
+    // Wrap code with icon destructuring
     const wrappedCode = `
       const { ${LUCIDE_KEYS.join(", ")} } = LucideIcons;
-      const { ${SIMPLE_ICON_KEYS.join(", ")} } = SimpleIcons;
+      ${siIconsUsed.length > 0 ? `const { ${siIconsUsed.join(", ")} } = SimpleIcons;` : ""}
+
       ${transpiledCode}
       return typeof Animation !== 'undefined' ? Animation : null;
     `;
@@ -61,13 +82,21 @@ export function evaluateAnimationCode(code: string): EvaluationResult {
       "React",
       "interpolate",
       "spring",
+      "Easing",
       "LucideIcons",
       "SimpleIcons",
       wrappedCode
     );
 
     // Execute and get the component
-    const Component = createComponent(React, interpolate, spring, LucideIcons, SimpleIcons);
+    const Component = createComponent(
+      React,
+      interpolate,
+      spring,
+      Easing,
+      LucideIcons,
+      SimpleIcons
+    );
 
     if (!Component) {
       return {

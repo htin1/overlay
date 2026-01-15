@@ -51,8 +51,8 @@ export function parseConfig(code: string): ConfigEntry[] {
 
     if (!atTopLevel) continue;
 
-    // Match simple key: value (skip arrays/objects)
-    const match = line.match(/^\s*(\w+)\s*:\s*("[^"]*"|'[^']*'|-?\d+\.?\d*)\s*,?\s*$/);
+    // Match simple key: value (skip arrays/objects), allow trailing comments
+    const match = line.match(/^\s*(\w+)\s*:\s*("[^"]*"|'[^']*'|-?\d+\.?\d*)\s*,?\s*(\/\/.*)?$/);
     if (!match) continue;
 
     const [, key, rawValue] = match;

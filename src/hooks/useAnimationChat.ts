@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
+import { evaluateAnimationCode } from "@/lib/sandbox/evaluator";
 
 export interface QuestionOption {
   id: string;
@@ -42,6 +43,8 @@ interface StreamCallbacks {
   onCodeGenerated: ((code: string) => void) | undefined;
 }
 
+const MAX_RETRIES = 2; // Maximum automatic retry attempts for code errors
+
 function parseQuestionResponse(content: string): QuestionData | null {
   const match = content.match(/<<<QUESTION_JSON>>>([\s\S]*?)<<<END_QUESTION_JSON>>>/);
   if (!match) return null;
@@ -73,6 +76,7 @@ export function useAnimationChat({
   messagesRef.current = controlledMessages;
 
   const streamCallbacksRef = useRef<StreamCallbacks | null>(null);
+  const retryCountRef = useRef(0);
 
   const updateMessages = useCallback((updater: Message[] | ((prev: Message[]) => Message[])) => {
     const newMessages = typeof updater === "function" ? updater(messagesRef.current) : updater;
@@ -84,8 +88,14 @@ export function useAnimationChat({
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const sendMessage = useCallback(async (content: string) => {
-    if (!content.trim() || isLoading) return;
+  const sendMessage = useCallback(async (content: string, isAutoRetry = false) => {
+    // Skip isLoading check for auto-retries since we control the timing
+    if (!content.trim() || (!isAutoRetry && isLoading)) return;
+
+    // Reset retry count on new user-initiated messages
+    if (!isAutoRetry) {
+      retryCountRef.current = 0;
+    }
 
     // Capture callbacks at stream start so layer switching doesn't lose data
     streamCallbacksRef.current = { onMessagesChange, onCodeGenerated };
@@ -156,7 +166,25 @@ export function useAnimationChat({
         // Extract and apply generated code
         const codeMatch = fullContent.match(/```tsx\n([\s\S]*?)```/);
         if (codeMatch) {
-          streamCallbacksRef.current?.onCodeGenerated?.(codeMatch[1].trim());
+          const extractedCode = codeMatch[1].trim();
+
+          // Evaluate code to check for errors
+          const { error } = evaluateAnimationCode(extractedCode);
+
+          if (error && retryCountRef.current < MAX_RETRIES) {
+            // Feedback loop: send error back to AI
+            retryCountRef.current++;
+            setIsLoading(false);
+
+            // Automatically send error feedback
+            setTimeout(() => {
+              sendMessage(`The code has an error: "${error}". Please fix it and regenerate.`, true);
+            }, 100);
+          } else {
+            // Code is valid or max retries reached
+            retryCountRef.current = 0;
+            streamCallbacksRef.current?.onCodeGenerated?.(extractedCode);
+          }
         }
       }
     } catch (error) {

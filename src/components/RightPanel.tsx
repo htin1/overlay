@@ -27,8 +27,7 @@ const SUGGESTIONS = [
   { label: "Typing text", prompt: "Typewriter effect that types out 'Coming Soon...' with a blinking cursor" },
   { label: "Notification", prompt: "macOS-style notification that slides in from top-right with app icon and message" },
   { label: "Logo reveal", prompt: "Animated logo reveal with particles that converge into the center and form a glowing icon" },
-  { label: "Progress bar", prompt: "Animated progress bar that fills from 0% to 100% with a glowing effect" },
-  { label: "Countdown", prompt: "Countdown timer from 10 to 0 with each number animating in and out" },
+  { label: "Code Screenshot", prompt: "a vscode screenshot of some python functions"}
 ];
 
 const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
