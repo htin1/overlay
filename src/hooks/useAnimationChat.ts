@@ -27,17 +27,9 @@ export interface Message {
   mentionedMedia?: MentionedMedia[];
 }
 
-export interface MediaContext {
-  id: string;
-  name: string;
-  url: string;
-  type: "image" | "video";
-}
-
 interface UseAnimationChatOptions {
   onCodeGenerated?: (code: string, config?: OverlayConfig) => void;
   currentCode?: string;
-  media?: MediaContext[];
   messages?: Message[];
   onMessagesChange?: (messages: Message[]) => void;
   model?: string;
@@ -97,7 +89,6 @@ function parseOverlayConfig(content: string): OverlayConfig | null {
 export function useAnimationChat({
   onCodeGenerated,
   currentCode,
-  media = [],
   messages: controlledMessages = [],
   onMessagesChange,
   model
@@ -231,7 +222,7 @@ export function useAnimationChat({
       setIsLoading(false);
       streamCallbacksRef.current = null;
     }
-  }, [updateMessages, currentCode, media, isLoading, onMessagesChange, onCodeGenerated, model]);
+  }, [updateMessages, currentCode, isLoading, onMessagesChange, onCodeGenerated, model]);
 
   const answerQuestion = useCallback(
     (questionId: string, option: QuestionOption) => {

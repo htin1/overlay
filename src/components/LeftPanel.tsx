@@ -2,29 +2,12 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Plus, Eye, EyeOff, GripVertical, Upload, Link, X, Film, Image, Layers, Trash2 } from "lucide-react";
-import type { Overlay } from "@/overlays";
+import { useOverlayContext } from "@/contexts/OverlayContext";
 import { OVERLAY_COLORS } from "@/lib/constants";
+import type { Overlay } from "@/overlays";
 
-export interface MediaItem {
-  id: string;
-  name: string;
-  url: string;
-  type: "image" | "video";
-  thumbnail?: string;
-}
-
-interface Props {
-  overlays: Overlay[];
-  selectedId: string | null;
-  onSelect: (id: string) => void;
-  onToggleVisibility: (id: string) => void;
-  onRemoveLayer: (id: string) => void;
-  onAddLayer: () => void;
-  onReorder: (overlays: Overlay[]) => void;
-  media: MediaItem[];
-  onAddMedia: (item: MediaItem) => void;
-  onRemoveMedia: (id: string) => void;
-}
+// Re-export MediaItem type for backwards compatibility
+export type { MediaItem } from "@/hooks/useMediaManager";
 
 function getOverlayLabel(overlay: Overlay): string {
   return overlay.prompt?.slice(0, 20) || "New layer";
@@ -45,25 +28,26 @@ function getFileName(url: string): string {
   }
 }
 
-export function LeftPanel({
-  overlays,
-  selectedId,
-  onSelect,
-  onToggleVisibility,
-  onRemoveLayer,
-  onAddLayer,
-  onReorder,
-  media,
-  onAddMedia,
-  onRemoveMedia,
-}: Props) {
+export function LeftPanel() {
+  const {
+    overlays,
+    selectedId,
+    setSelectedId,
+    toggleVisibility,
+    removeOverlay,
+    addOverlay,
+    reorderOverlays,
+    media,
+    addMedia,
+    removeMedia,
+  } = useOverlayContext();
+
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [urlInput, setUrlInput] = useState("");
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Single upload function for files
   const uploadFile = useCallback(async (file: File) => {
     if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) return;
     try {
@@ -72,7 +56,7 @@ export function LeftPanel({
       const res = await fetch("/api/media", { method: "POST", body: formData });
       if (!res.ok) throw new Error("Upload failed");
       const { url } = await res.json();
-      onAddMedia({
+      addMedia({
         id: crypto.randomUUID(),
         name: file.name || "media",
         url,
@@ -81,13 +65,13 @@ export function LeftPanel({
     } catch (err) {
       console.error("Upload error:", err);
     }
-  }, [onAddMedia]);
+  }, [addMedia]);
 
   const handleAddUrl = (e: React.FormEvent) => {
     e.preventDefault();
     if (!urlInput.trim()) return;
     const url = urlInput.trim();
-    onAddMedia({
+    addMedia({
       id: crypto.randomUUID(),
       name: getFileName(url),
       url,
@@ -120,7 +104,6 @@ export function LeftPanel({
     return () => document.removeEventListener("paste", handlePaste);
   }, [handlePaste]);
 
-  // Layer drag handlers
   const handleDragStart = (e: React.DragEvent, id: string) => {
     setDraggedId(id);
     e.dataTransfer.effectAllowed = "move";
@@ -139,16 +122,15 @@ export function LeftPanel({
     const newOverlays = [...overlays];
     const [removed] = newOverlays.splice(draggedIndex, 1);
     newOverlays.splice(targetIndex, 0, removed);
-    onReorder(newOverlays);
+    reorderOverlays(newOverlays);
     setDraggedId(null);
     setDragOverId(null);
   };
 
   return (
     <div className="w-72 border-r border-zinc-200 dark:border-white/5 bg-zinc-50 dark:bg-zinc-900/50 flex flex-col overflow-hidden">
-      {/* Layers Section (Upper Half) */}
+      {/* Layers Section */}
       <div className="flex-1 flex flex-col min-h-0 border-b border-zinc-200 dark:border-white/5">
-        {/* Layers Header */}
         <div className="h-10 border-b border-zinc-200 dark:border-white/5 flex items-center justify-between px-3 shrink-0">
           <span className="text-xs font-medium text-zinc-500 flex items-center gap-1.5">
             <Layers size={12} />
@@ -156,20 +138,19 @@ export function LeftPanel({
             <span className="text-zinc-400">({overlays.length})</span>
           </span>
           <button
-            onClick={onAddLayer}
+            onClick={addOverlay}
             className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/10 p-1 rounded-lg transition-all"
           >
             <Plus size={14} />
           </button>
         </div>
 
-        {/* Layer List */}
         <div className="flex-1 overflow-y-auto">
           {overlays.length === 0 ? (
             <div className="p-4 text-center">
               <p className="text-zinc-400 text-sm mb-2">No layers yet</p>
               <button
-                onClick={onAddLayer}
+                onClick={addOverlay}
                 className="text-xs text-forest-500 hover:text-forest-400"
               >
                 + Create your first layer
@@ -194,7 +175,7 @@ export function LeftPanel({
                     className={`group flex items-center gap-1.5 px-2 py-2 cursor-pointer transition-colors ${
                       isSelected ? "bg-zinc-200 dark:bg-white/10" : "hover:bg-zinc-100 dark:hover:bg-white/5"
                     } ${draggedId === overlay.id ? "opacity-50" : ""} ${dragOverId === overlay.id ? "border-t-2 border-forest-500" : ""}`}
-                    onClick={() => onSelect(overlay.id)}
+                    onClick={() => setSelectedId(overlay.id)}
                   >
                     <div className="cursor-grab active:cursor-grabbing text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400">
                       <GripVertical size={14} />
@@ -205,14 +186,14 @@ export function LeftPanel({
                     </span>
                     <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
-                        onClick={(e) => { e.stopPropagation(); onToggleVisibility(overlay.id); }}
+                        onClick={(e) => { e.stopPropagation(); toggleVisibility(overlay.id); }}
                         className={`p-1 rounded transition-colors ${isVisible ? "text-zinc-400 hover:text-zinc-900 dark:hover:text-white" : "text-zinc-300 dark:text-zinc-600 hover:text-zinc-500"}`}
                         title={isVisible ? "Hide" : "Show"}
                       >
                         {isVisible ? <Eye size={14} /> : <EyeOff size={14} />}
                       </button>
                       <button
-                        onClick={(e) => { e.stopPropagation(); onRemoveLayer(overlay.id); }}
+                        onClick={(e) => { e.stopPropagation(); removeOverlay(overlay.id); }}
                         className="p-1 rounded transition-colors text-zinc-400 hover:text-red-500"
                         title="Delete"
                       >
@@ -227,9 +208,8 @@ export function LeftPanel({
         </div>
       </div>
 
-      {/* Media Section (Lower Half) */}
+      {/* Media Section */}
       <div className="flex-1 flex flex-col min-h-0">
-        {/* Media Header */}
         <div className="h-10 border-b border-zinc-200 dark:border-white/5 flex items-center justify-between px-3 shrink-0">
           <span className="text-xs font-medium text-zinc-500 flex items-center gap-1.5">
             <Image size={12} />
@@ -244,7 +224,6 @@ export function LeftPanel({
           </button>
         </div>
 
-        {/* Media List / Drop Zone */}
         <div
           className="flex-1 overflow-y-auto"
           onDragOver={(e) => { e.preventDefault(); setIsDraggingFile(true); }}
@@ -312,7 +291,7 @@ export function LeftPanel({
                     <p className="text-[10px] text-zinc-400 uppercase">{item.type}</p>
                   </div>
                   <button
-                    onClick={() => onRemoveMedia(item.id)}
+                    onClick={() => removeMedia(item.id)}
                     className="p-1 text-zinc-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <X size={12} />
@@ -327,7 +306,6 @@ export function LeftPanel({
               </button>
             </div>
           )}
-          {/* Single shared file input */}
           <input
             ref={fileInputRef}
             type="file"

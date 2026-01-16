@@ -1,50 +1,45 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 
 const MAX_HISTORY = 50;
 
 export function useHistory<T>(initialState: T) {
   const [state, setState] = useState<T>(initialState);
-  const past = useRef<T[]>([]);
-  const future = useRef<T[]>([]);
+  const [past, setPast] = useState<T[]>([]);
+  const [future, setFuture] = useState<T[]>([]);
 
   const set = useCallback((newState: T | ((prev: T) => T)) => {
     setState((prev) => {
       const next = typeof newState === "function" ? (newState as (prev: T) => T)(prev) : newState;
-      // Only push to history if state actually changed
       if (JSON.stringify(prev) !== JSON.stringify(next)) {
-        past.current = [...past.current.slice(-MAX_HISTORY + 1), prev];
-        future.current = [];
+        setPast((p) => [...p.slice(-MAX_HISTORY + 1), prev]);
+        setFuture([]);
       }
       return next;
     });
   }, []);
 
   const undo = useCallback(() => {
-    if (past.current.length === 0) return;
-    setState((current) => {
-      const previous = past.current[past.current.length - 1];
-      past.current = past.current.slice(0, -1);
-      future.current = [current, ...future.current];
-      return previous;
-    });
-  }, []);
+    if (past.length === 0) return;
+    const previous = past[past.length - 1];
+    setPast((p) => p.slice(0, -1));
+    setFuture((f) => [state, ...f]);
+    setState(previous);
+  }, [past, state]);
 
   const redo = useCallback(() => {
-    if (future.current.length === 0) return;
-    setState((current) => {
-      const next = future.current[0];
-      future.current = future.current.slice(1);
-      past.current = [...past.current, current];
-      return next;
-    });
-  }, []);
+    if (future.length === 0) return;
+    const next = future[0];
+    setFuture((f) => f.slice(1));
+    setPast((p) => [...p, state]);
+    setState(next);
+  }, [future, state]);
 
   return {
     state,
     set,
     undo,
     redo,
-    canUndo: past.current.length > 0,
-    canRedo: future.current.length > 0,
+    canUndo: past.length > 0,
+    canRedo: future.length > 0,
   };
 }

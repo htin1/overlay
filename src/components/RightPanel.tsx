@@ -8,10 +8,10 @@ import { vscodeDark } from "@uiw/codemirror-theme-vscode";
 import type { Overlay } from "@/overlays";
 import { useTheme } from "@/hooks/useTheme";
 import { useAnimationChat } from "@/hooks/useAnimationChat";
+import { useOverlayContext } from "@/contexts/OverlayContext";
 import type { MentionedMedia } from "@/types/media";
 import { AskQuestion } from "./AskQuestion";
 import { MentionInput } from "./MentionInput";
-import type { MediaItem } from "./LeftPanel";
 import { parseConfig, updateConfigValue, parseDurationFrames } from "@/lib/parseConfig";
 import { AI_MODELS, type AIModelId } from "@/lib/constants";
 
@@ -19,8 +19,6 @@ interface Props {
   overlay: Overlay | null;
   onUpdate: (data: Partial<Overlay>) => void;
   onRemove: () => void;
-  media?: MediaItem[];
-  onAddLayer?: () => void;
 }
 
 type Tab = "chat" | "settings" | "code";
@@ -39,8 +37,9 @@ const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "code", label: "Code", icon: <Code2 size={12} /> },
 ];
 
-export function RightPanel({ overlay, onUpdate, onRemove, media = [], onAddLayer }: Props) {
+export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
   const { theme } = useTheme();
+  const { media, addOverlay } = useOverlayContext();
   const [activeTab, setActiveTab] = useState<Tab>("chat");
   const [selectedModel, setSelectedModel] = useState<AIModelId>(AI_MODELS[0].id);
   const [mentionedMedia, setMentionedMedia] = useState<MentionedMedia[]>([]);
@@ -56,7 +55,6 @@ export function RightPanel({ overlay, onUpdate, onRemove, media = [], onAddLayer
       if (duration) {
         updates.endFrame = overlay.startFrame + duration;
       }
-      // Apply overlay config if AI suggested dimensions
       if (config) {
         if (config.x !== undefined) updates.x = config.x;
         if (config.y !== undefined) updates.y = config.y;
@@ -66,7 +64,6 @@ export function RightPanel({ overlay, onUpdate, onRemove, media = [], onAddLayer
       onUpdate(updates);
     },
     currentCode: overlay?.code,
-    media: media,
     messages: overlay?.messages ?? [],
     onMessagesChange: (messages) => onUpdate({ messages }),
     model: selectedModel,
@@ -99,9 +96,9 @@ export function RightPanel({ overlay, onUpdate, onRemove, media = [], onAddLayer
           </div>
           <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">No layer selected</h3>
           <p className="text-xs text-zinc-500 mb-4">Select a layer to edit or create a new one</p>
-          {onAddLayer && (
+          {addOverlay && (
             <button
-              onClick={onAddLayer}
+              onClick={addOverlay}
               className="px-3 py-1.5 text-xs bg-forest-500 hover:bg-forest-600 text-white rounded-lg transition-colors"
             >
               + New Layer
@@ -134,9 +131,9 @@ export function RightPanel({ overlay, onUpdate, onRemove, media = [], onAddLayer
             ))}
           </div>
           <div className="flex items-center gap-1">
-            {onAddLayer && (
+            {addOverlay && (
               <button
-                onClick={onAddLayer}
+                onClick={addOverlay}
                 className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white p-1 rounded transition-colors"
                 title="New layer"
               >

@@ -2,34 +2,24 @@
 
 import React, { useRef, useCallback, memo, useState } from "react";
 import { PlayerRef } from "@remotion/player";
-import type { Overlay } from "@/overlays";
+import { useOverlayContext } from "@/contexts/OverlayContext";
 import { usePlayerFrame } from "../hooks/usePlayerFrame";
 import { useDrag } from "../hooks/useDrag";
 import { ZoomIn, ZoomOut } from "lucide-react";
 import { clickToFrame, formatTime } from "../lib/utils";
 import { OVERLAY_COLORS, TIMELINE_CONFIG } from "../lib/constants";
+import type { Overlay } from "@/overlays";
 
 const { BASE_PIXELS_PER_FRAME, MIN_ZOOM, MAX_ZOOM, MIN_CLIP_DURATION, TRACK_LABEL_WIDTH } = TIMELINE_CONFIG;
 
 interface TimelineProps {
-  overlays: Overlay[];
-  selectedId: string | null;
-  onSelect: (id: string) => void;
-  onUpdateTiming: (id: string, startFrame: number, endFrame: number) => void;
   playerRef: React.RefObject<PlayerRef | null>;
   totalFrames: number;
   fps: number;
 }
 
-export function Timeline({
-  overlays,
-  selectedId,
-  onSelect,
-  onUpdateTiming,
-  playerRef,
-  totalFrames,
-  fps,
-}: TimelineProps) {
+export function Timeline({ playerRef, totalFrames, fps }: TimelineProps) {
+  const { overlays, selectedId, setSelectedId, updateTiming } = useOverlayContext();
   const [zoom, setZoom] = useState(1);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -39,7 +29,6 @@ export function Timeline({
 
   return (
     <div className="flex flex-col bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-200 dark:border-white/5 min-w-0">
-      {/* Header - zoom controls only */}
       <div className="flex items-center justify-end px-4 py-2 border-b border-zinc-200 dark:border-white/5">
         <div className="flex items-center gap-2">
           <ZoomOut size={12} className="text-zinc-400" />
@@ -49,16 +38,13 @@ export function Timeline({
         </div>
       </div>
 
-      {/* Scrollable area */}
       <div ref={scrollRef} className="relative overflow-x-auto overflow-y-auto" style={{ minHeight: 200, maxHeight: 400 }}>
         <div className="relative inline-block" style={{ minWidth: "100%", width: timelineWidth + TRACK_LABEL_WIDTH }}>
-          {/* Ruler */}
           <div className="flex sticky top-0 z-10">
             <div className="w-24 shrink-0 h-8 border-r border-zinc-200 dark:border-white/5 bg-zinc-100 dark:bg-zinc-900/80" />
             <Ruler totalFrames={totalFrames} fps={fps} pixelsPerFrame={pixelsPerFrame} onSeek={seek} />
           </div>
 
-          {/* Tracks */}
           <div className="relative">
             {overlays.map((overlay) => (
               <Track
@@ -67,8 +53,8 @@ export function Timeline({
                 totalFrames={totalFrames}
                 pixelsPerFrame={pixelsPerFrame}
                 selected={selectedId === overlay.id}
-                onSelect={() => onSelect(overlay.id)}
-                onUpdateTiming={(s, e) => onUpdateTiming(overlay.id, s, e)}
+                onSelect={() => setSelectedId(overlay.id)}
+                onUpdateTiming={(s, e) => updateTiming(overlay.id, s, e)}
                 onSeek={seek}
               />
             ))}
@@ -90,9 +76,6 @@ export function Timeline({
     </div>
   );
 }
-
-
-// --- Sub-components ---
 
 function ZoomSlider({ zoom, onZoomChange }: { zoom: number; onZoomChange: (z: number) => void }) {
   const sliderRef = useRef<HTMLDivElement>(null);
