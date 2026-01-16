@@ -322,17 +322,17 @@ export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
                   );
                 }
 
-                return message.role === "user" ? (
-                  <div
-                    key={message.id}
-                    className="ml-6 border border-forest-500 text-zinc-900 dark:text-white rounded-xl rounded-tr-sm p-2.5 text-xs"
-                  >
-                    {message.content}
-                  </div>
-                ) : message.isError ? (
+                return message.isError ? (
                   <div
                     key={message.id}
                     className="mr-6 border border-red-500 text-zinc-900 dark:text-white rounded-xl rounded-tl-sm p-2.5 text-xs"
+                  >
+                    {message.content}
+                  </div>
+                ) : message.role === "user" ? (
+                  <div
+                    key={message.id}
+                    className="ml-6 border border-forest-500 text-zinc-900 dark:text-white rounded-xl rounded-tr-sm p-2.5 text-xs"
                   >
                     {message.content}
                   </div>

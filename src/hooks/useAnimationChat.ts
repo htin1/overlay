@@ -118,7 +118,6 @@ export function useAnimationChat({
     // Skip isLoading check for auto-retries since we control the timing
     if (!content.trim() || (!isAutoRetry && isLoading)) return;
 
-    // Reset retry count on new user-initiated messages
     if (!isAutoRetry) {
       retryCountRef.current = 0;
     }
@@ -126,27 +125,34 @@ export function useAnimationChat({
     // Capture callbacks at stream start so layer switching doesn't lose data
     streamCallbacksRef.current = { onMessagesChange, onCodeGenerated };
 
-    const userMessage: Message = {
-      id: crypto.randomUUID(),
-      role: "user",
-      content: content.trim(),
-      mentionedMedia: mentionedMedia && mentionedMedia.length > 0 ? mentionedMedia : undefined,
-    };
+    const trimmedContent = content.trim();
 
-    updateMessages((prev) => [...prev, userMessage]);
+    if (!isAutoRetry) {
+      updateMessages((prev) => [...prev, {
+        id: crypto.randomUUID(),
+        role: "user",
+        content: trimmedContent,
+        mentionedMedia: mentionedMedia?.length ? mentionedMedia : undefined,
+      }]);
+    }
     setInput("");
     setIsLoading(true);
 
     try {
+      const apiMessages = messagesRef.current.map((m) => ({
+        role: m.role === "question" ? "assistant" : m.role,
+        content: m.content,
+        mentionedMedia: m.mentionedMedia,
+      }));
+      if (isAutoRetry) {
+        apiMessages.push({ role: "user", content: trimmedContent, mentionedMedia: undefined });
+      }
+
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: messagesRef.current.map((m) => ({
-            role: m.role === "question" ? "assistant" : m.role,
-            content: m.content,
-            mentionedMedia: m.mentionedMedia,
-          })),
+          messages: apiMessages,
           currentCode,
           model,
         }),
@@ -200,28 +206,34 @@ export function useAnimationChat({
           // Evaluate code to check for errors
           const { error } = evaluateAnimationCode(extractedCode);
 
-          if (error && retryCountRef.current < MAX_RETRIES) {
-            // Feedback loop: send error back to AI
-            retryCountRef.current++;
-            setIsLoading(false);
+          if (error) {
+            const canRetry = retryCountRef.current < MAX_RETRIES;
+            updateMessages((prev) => [...prev, {
+              id: crypto.randomUUID(),
+              role: "assistant",
+              content: `Error: ${error}${canRetry ? ". Retrying..." : ""}`,
+              isError: true,
+            }]);
 
-            // Automatically send error feedback
-            setTimeout(() => {
-              sendMessage(`The code has an error: "${error}". Please fix it and regenerate.`, true);
-            }, 100);
+            if (canRetry) {
+              retryCountRef.current++;
+              setIsLoading(false);
+              setTimeout(() => sendMessage(`Code error: "${error}". Please fix.`, true), 100);
+            } else {
+              retryCountRef.current = 0;
+            }
           } else {
-            // Code is valid or max retries reached
             retryCountRef.current = 0;
             streamCallbacksRef.current?.onCodeGenerated?.(extractedCode, overlayConfig ?? undefined);
           }
         }
       }
-    } catch (error) {
-      console.error("Chat error:", error);
+    } catch (err) {
+      console.error("Chat error:", err);
       updateMessages((prev) => [...prev, {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: "Sorry, I encountered an error generating the animation. Please try again.",
+        content: "Failed to generate animation. Please try again.",
         isError: true,
       }]);
     } finally {
