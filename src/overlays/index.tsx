@@ -78,12 +78,22 @@ function CodeRenderer({ overlay }: { overlay: Overlay }) {
   }
 
   return (
-    <Component
-      frame={frame}
-      durationInFrames={durationInFrames}
-      width={width}
-      height={height}
-    />
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Component
+        frame={frame}
+        durationInFrames={durationInFrames}
+        width={width}
+        height={height}
+      />
+    </div>
   );
 }
 
@@ -94,10 +104,10 @@ export const codeOverlay = {
     type: "code",
     code: "",
     prompt: "",
-    x: 0,
-    y: 0,
-    w: 100,
-    h: 100,
+    x: 25,
+    y: 25,
+    w: 50,
+    h: 50,
     startFrame: 0,
     endFrame: TOTAL_FRAMES,
     glass: false,
@@ -105,7 +115,7 @@ export const codeOverlay = {
     ...overrides,
   }),
 
-  render: ({ overlay }: { overlay: Overlay; durationInFrames?: number }) => <CodeRenderer overlay={overlay} />,
+  render: ({ overlay }: { overlay: Overlay }) => <CodeRenderer overlay={overlay} />,
 
   editor: ({ overlay }: { overlay: Overlay }) => (
     <div className="space-y-3">

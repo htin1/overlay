@@ -31,7 +31,7 @@ export interface MediaContext {
 }
 
 interface UseAnimationChatOptions {
-  onCodeGenerated?: (code: string) => void;
+  onCodeGenerated?: (code: string, config?: OverlayConfig) => void;
   currentCode?: string;
   media?: MediaContext[];
   messages?: Message[];
@@ -40,7 +40,7 @@ interface UseAnimationChatOptions {
 
 interface StreamCallbacks {
   onMessagesChange: ((messages: Message[]) => void) | undefined;
-  onCodeGenerated: ((code: string) => void) | undefined;
+  onCodeGenerated: ((code: string, config?: OverlayConfig) => void) | undefined;
 }
 
 const MAX_RETRIES = 2; // Maximum automatic retry attempts for code errors
@@ -59,6 +59,30 @@ function parseQuestionResponse(content: string): QuestionData | null {
         label: opt.label,
         description: opt.description,
       })),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export interface OverlayConfig {
+  x?: number;
+  y?: number;
+  w?: number;
+  h?: number;
+}
+
+function parseOverlayConfig(content: string): OverlayConfig | null {
+  const match = content.match(/<<<OVERLAY_CONFIG>>>([\s\S]*?)<<<END_OVERLAY_CONFIG>>>/);
+  if (!match) return null;
+
+  try {
+    const data = JSON.parse(match[1].trim());
+    return {
+      x: typeof data.x === "number" ? data.x : undefined,
+      y: typeof data.y === "number" ? data.y : undefined,
+      w: typeof data.w === "number" ? data.w : undefined,
+      h: typeof data.h === "number" ? data.h : undefined,
     };
   } catch {
     return null;
@@ -167,6 +191,7 @@ export function useAnimationChat({
         const codeMatch = fullContent.match(/```tsx\n([\s\S]*?)```/);
         if (codeMatch) {
           const extractedCode = codeMatch[1].trim();
+          const overlayConfig = parseOverlayConfig(fullContent);
 
           // Evaluate code to check for errors
           const { error } = evaluateAnimationCode(extractedCode);
@@ -183,7 +208,7 @@ export function useAnimationChat({
           } else {
             // Code is valid or max retries reached
             retryCountRef.current = 0;
-            streamCallbacksRef.current?.onCodeGenerated?.(extractedCode);
+            streamCallbacksRef.current?.onCodeGenerated?.(extractedCode, overlayConfig ?? undefined);
           }
         }
       }

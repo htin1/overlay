@@ -2,7 +2,6 @@ import { getOverlayDefinition, type Overlay } from "@/overlays";
 
 interface Props {
   overlay: Overlay;
-  durationInFrames: number;
 }
 
 const glassStyle = {
@@ -14,7 +13,7 @@ const glassStyle = {
   boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
 };
 
-export function OverlayItem({ overlay, durationInFrames }: Props) {
+export function OverlayItem({ overlay }: Props): React.ReactNode {
   const definition = getOverlayDefinition(overlay.type);
   if (!definition) return null;
 
@@ -28,9 +27,19 @@ export function OverlayItem({ overlay, durationInFrames }: Props) {
     ...(overlay.glass ? glassStyle : {}),
   };
 
+  const contentStyle: React.CSSProperties = {
+    width: "100%",
+    height: "100%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+
   return (
     <div style={baseStyle}>
-      {definition.render({ overlay, durationInFrames })}
+      <div style={contentStyle}>
+        {definition.render({ overlay })}
+      </div>
     </div>
   );
 }

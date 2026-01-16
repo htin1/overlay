@@ -13,12 +13,11 @@ interface MediaItem {
 const MODELS = {
   "sonnet-4.5": () => anthropic("claude-sonnet-4-5"),
   "haiku-4.5": () => anthropic("claude-haiku-4-5"),
-  "opus-4.5": () => anthropic("claude-opus-4-5"),
   "gemini-3-flash": () => google("gemini-3-flash-preview"),
   "gemini-3-pro": () => google("gemini-3-pro-preview"),
 }
 
-const DEFAULT_MODEL = "gemini-3-pro";
+const DEFAULT_MODEL = "gemini-3-flash";
 
 export async function POST(req: Request) {
   const { messages, currentCode, media } = await req.json();

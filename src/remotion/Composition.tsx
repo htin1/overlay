@@ -7,21 +7,18 @@ export interface CompositionProps {
   backgroundColor?: string;
 }
 
-export function VideoComposition({ overlays = [], backgroundColor = "#000000" }: CompositionProps) {
+export function VideoComposition({ overlays = [], backgroundColor = "#000000" }: CompositionProps): React.ReactNode {
   return (
     <AbsoluteFill style={{ backgroundColor }}>
-      {overlays.map((overlay) => {
-        const duration = overlay.endFrame - overlay.startFrame;
-        return (
-          <Sequence
-            key={overlay.id}
-            from={overlay.startFrame}
-            durationInFrames={duration}
-          >
-            <OverlayItem overlay={overlay} durationInFrames={duration} />
-          </Sequence>
-        );
-      })}
+      {overlays.map((overlay) => (
+        <Sequence
+          key={overlay.id}
+          from={overlay.startFrame}
+          durationInFrames={overlay.endFrame - overlay.startFrame}
+        >
+          <OverlayItem overlay={overlay} />
+        </Sequence>
+      ))}
     </AbsoluteFill>
   );
 }

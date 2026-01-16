@@ -86,6 +86,23 @@ const scale = spring({ frame: Math.max(0, frame - 4), fps: 30, config: { damping
 <video src={url} autoPlay muted loop playsInline style={{ objectFit: "cover" }} />
 \`\`\`
 
+## Overlay Size & Position
+By default, overlays are 50% width/height centered. Your component should fill its container using \`width: "100%", height: "100%"\` on the root element.
+
+**IMPORTANT**: Always include OVERLAY_CONFIG to specify appropriate dimensions for your element:
+<<<OVERLAY_CONFIG>>>
+{ "x": 10, "y": 10, "w": 30, "h": 20 }
+<<<END_OVERLAY_CONFIG>>>
+- x, y: position as % from top-left (0-100)
+- w, h: size as % of canvas (1-100)
+
+Examples:
+- Small button/badge: w: 12-20, h: 5-10
+- Subscribe button: w: 15-25, h: 6-12
+- Notification toast: w: 25-35, h: 10-15
+- Text overlay: w: 40-60, h: 15-25
+- Full-screen effect: w: 100, h: 100
+
 ## Clarifying Questions
 When ambiguous, ask before generating. Format:
 <<<QUESTION_JSON>>>
