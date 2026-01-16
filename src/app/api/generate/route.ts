@@ -84,9 +84,9 @@ async function buildMultimodalMessages(messages: IncomingMessage[], baseUrl: str
 const MODEL_PROVIDERS: Record<AIModelId, () => ReturnType<typeof anthropic | typeof google | typeof openai>> = {
   "sonnet-4.5": () => anthropic("claude-sonnet-4-5"),
   "haiku-4.5": () => anthropic("claude-haiku-4-5"),
+  "opus-4.5": () => anthropic("claude-opus-4-5"),
   "gemini-3-flash": () => google("gemini-3-flash-preview"),
   "gemini-3-pro": () => google("gemini-3-pro-preview"),
-  "gpt-5.2": () => openai("gpt-5.2"),
 };
 
 export async function POST(req: Request) {

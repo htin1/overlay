@@ -354,7 +354,7 @@ export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
               {isLoading && messages.length > 0 && messages[messages.length - 1].role !== "assistant" && (
                 <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
                   <span className="flex items-center gap-1.5">
-                    <span className="animate-pulse">Waiting</span>
+                    <span className="animate-pulse">Thinking</span>
                     <span className="flex gap-0.5">
                       <span className="w-1 h-1 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
                       <span className="w-1 h-1 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
