@@ -36,6 +36,7 @@ interface UseAnimationChatOptions {
   media?: MediaContext[];
   messages?: Message[];
   onMessagesChange?: (messages: Message[]) => void;
+  model?: string;
 }
 
 interface StreamCallbacks {
@@ -94,7 +95,8 @@ export function useAnimationChat({
   currentCode,
   media = [],
   messages: controlledMessages = [],
-  onMessagesChange
+  onMessagesChange,
+  model
 }: UseAnimationChatOptions = {}) {
   const messagesRef = useRef(controlledMessages);
   messagesRef.current = controlledMessages;
@@ -145,6 +147,7 @@ export function useAnimationChat({
           })),
           currentCode,
           media: media.length > 0 ? media : undefined,
+          model,
         }),
       });
 
@@ -223,7 +226,7 @@ export function useAnimationChat({
       setIsLoading(false);
       streamCallbacksRef.current = null;
     }
-  }, [updateMessages, currentCode, media, isLoading, onMessagesChange, onCodeGenerated]);
+  }, [updateMessages, currentCode, media, isLoading, onMessagesChange, onCodeGenerated, model]);
 
   const answerQuestion = useCallback(
     (questionId: string, option: QuestionOption) => {

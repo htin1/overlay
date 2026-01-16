@@ -18,3 +18,15 @@ export const OVERLAY_COLORS = {
   },
 } as const;
 
+// AI model configuration
+export const AI_MODELS = [
+  { id: "gemini-3-flash", label: "Gemini 3 Flash" },
+  { id: "gemini-3-pro", label: "Gemini 3 Pro" },
+  { id: "sonnet-4.5", label: "Claude Sonnet 4.5" },
+  { id: "haiku-4.5", label: "Claude Haiku 4.5" },
+] as const;
+
+export type AIModelId = (typeof AI_MODELS)[number]["id"];
+
+export const DEFAULT_AI_MODEL: AIModelId = "gemini-3-flash";
+
