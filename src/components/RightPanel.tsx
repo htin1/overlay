@@ -29,12 +29,13 @@ const SUGGESTIONS = [
   { label: "Notification", prompt: "multiple macOS-style notifications that slides in from top-right with message 'Palmier Animation is coming soon!'. From iMessage, Slack, Microsft Teams, Gmail." },
   { label: "Claude Cowork", prompt: "Create an animation from @Sample 4 and it clicks on 'Create a file' button then it pops up the MacOS file explorer. You shoudl look at the image and recreate the animation with react, do not use the image in the code." },
   { label: "Logo reveal", prompt: "Animated a logo reveal provided in @Sample 5 along with the text 'Palmier' on its right. transparent background." },
-  { label: "Image carousel", prompt: "Create a 3D perspective image carousel with @Sample 1, @Sample 2, and @Sample 3. Display all 3 images at once, with the middle one in focus." },
+  { label: "Orbit cards", prompt: "Create an orbit-style card carousel with @Sample 1, @Sample 2, and @Sample 3. Cards arranged in a fan/arc pattern emerging from a curved surface at the bottom (like sitting on a sphere). Each card has rounded corners, slight rotation at different angles, and overlaps with neighbors. Center card is most prominent and upright, outer cards tilt away. Add subtle shadows between cards for depth. Smooth animation that rotates the cards around the orbit." },
   { label: "Code Screenshot", prompt: "a vscode screenshot of some python functions"},
   { label: "Slack Message", prompt: "a Slack channel between Marcos and Harrison discussing about how to surf a barrel. Use slack color palette."},
   { label: "Glass overlay", prompt: "a screenshot of a conversation between Michael and Dalton about who to fund for series A. Use Apple-like glass overlay style."},
   { label: "Linkedin Page", prompt: "an animation of scrolling through a Linkedin page in Macbook view."},
   { label: "Three Blue One Brown", prompt: "a three-blue-one-brown style animation explaining the difference between a sin wave and a cosine wave. Add caption at the bottom (colored animation so it looks like reading it word by word). 30 seconds, content is very detailed and should explain nicely to someone who doesn't understand the concept."},
+  { label: "ChatGPT", prompt: "a screenshot of ChatGPT UI with a conversation between a user and ChatGPT. The user asks: 'How to use Adobe After Effects?'. ChatGPT response something funny like: you still use after effects in 2026? use palmier instead! Use ChatGPT color palette."},
 ];
 
 const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
