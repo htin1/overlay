@@ -1,6 +1,7 @@
 "use client";
 
 import { Player, PlayerRef } from "@remotion/player";
+import { renderMediaOnWeb } from "@remotion/web-renderer";
 import { useState, useRef, useCallback } from "react";
 import { VideoComposition } from "../remotion/Composition";
 import { type Overlay, codeOverlay } from "@/overlays";
@@ -61,35 +62,32 @@ export default function Home() {
   const exportVideo = async () => {
     setExporting(true);
     try {
-      const res = await fetch("/api/render", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ overlays, backgroundColor, totalFrames }),
+      const { getBlob } = await renderMediaOnWeb({
+        composition: {
+          id: "Video",
+          component: VideoComposition,
+          durationInFrames: totalFrames,
+          fps: FPS,
+          width: 1920,
+          height: 1080,
+          defaultProps: { overlays: [], backgroundColor: "#000000" },
+        },
+        inputProps: { overlays: visibleOverlays, backgroundColor },
+        onProgress: ({ renderedFrames }) => {
+          console.log(`Rendered ${renderedFrames} / ${totalFrames} frames`);
+        },
       });
 
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error("No response body");
-
-      const decoder = new TextDecoder();
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        for (const line of decoder.decode(value).split("\n").filter((l) => l.startsWith("data: "))) {
-          const data = JSON.parse(line.slice(6));
-          if (data.type === "done") {
-            const a = document.createElement("a");
-            a.href = `/api/render/${data.filename}`;
-            a.download = "export.mp4";
-            a.click();
-          } else if (data.type === "error") {
-            throw new Error(data.message);
-          }
-        }
-      }
+      const blob = await getBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "export.mp4";
+      a.click();
+      URL.revokeObjectURL(url);
     } catch (e) {
       console.error(e);
-      alert("Export failed");
+      alert("Export failed: " + (e instanceof Error ? e.message : "Unknown error"));
     } finally {
       setExporting(false);
     }
