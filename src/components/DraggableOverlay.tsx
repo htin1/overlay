@@ -58,21 +58,21 @@ export function DraggableOverlay({
   return (
     <div
       className={`absolute pointer-events-none border-2 ${
-        selected ? "border-amber-500" : "border-transparent hover:border-white/30"
+        selected ? "border-forest-500" : "border-transparent hover:border-white/30"
       }`}
       style={{ left: `${x}%`, top: `${y}%`, width: `${width}%`, height: `${height}%` }}
     >
       {/* Drag handle */}
       <div
         className={`absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full cursor-move pointer-events-auto border-2 ${
-          selected ? "bg-amber-500 border-amber-600" : "bg-white border-zinc-800 hover:bg-zinc-200"
+          selected ? "bg-forest-500 border-forest-600" : "bg-white border-zinc-800 hover:bg-zinc-200"
         }`}
         onMouseDown={(e) => handleMouseDown(e, "move")}
       />
       {/* Resize handle */}
       {selected && (
         <div
-          className="absolute -bottom-1.5 -right-1.5 w-3 h-3 rounded-full border-2 cursor-se-resize pointer-events-auto bg-amber-500 border-amber-600"
+          className="absolute -bottom-1.5 -right-1.5 w-3 h-3 rounded-full border-2 cursor-se-resize pointer-events-auto bg-forest-500 border-forest-600"
           onMouseDown={(e) => handleMouseDown(e, "resize")}
         />
       )}

@@ -204,7 +204,7 @@ export function MentionInput({
           {mentionedMedia.map((item) => (
             <div
               key={item.id}
-              className="flex items-center gap-1.5 px-2 py-1 bg-amber-500/10 border border-amber-500/30 rounded-full text-[11px] text-amber-600 dark:text-amber-400"
+              className="flex items-center gap-1.5 px-2 py-1 bg-forest-500/10 border border-forest-500/30 rounded-full text-[11px] text-forest-600 dark:text-forest-400"
             >
               <img
                 src={item.url}
@@ -215,7 +215,7 @@ export function MentionInput({
               <button
                 type="button"
                 onClick={() => handleRemoveMention(item.id)}
-                className="hover:text-amber-700 dark:hover:text-amber-300"
+                className="hover:text-forest-700 dark:hover:text-forest-300"
               >
                 <X size={12} />
               </button>
@@ -233,7 +233,7 @@ export function MentionInput({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           rows={3}
-          className="w-full px-3 py-2 pr-12 text-xs bg-zinc-100 dark:bg-zinc-800 rounded-lg border-0 focus:ring-1 focus:ring-amber-500 outline-none resize-none"
+          className="w-full px-3 py-2 pr-12 text-xs bg-zinc-100 dark:bg-zinc-800 rounded-lg border-0 focus:ring-1 focus:ring-forest-500 outline-none resize-none"
           disabled={disabled}
         />
         {submitButton}

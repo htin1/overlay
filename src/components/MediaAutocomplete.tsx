@@ -98,12 +98,12 @@ export function MediaAutocomplete({ media, query, onSelect, onClose }: Props) {
             onClick={() => onSelect("all")}
             className={`w-full flex items-center gap-2 px-2 py-1.5 text-left transition-colors ${
               selectedIndex === 0
-                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                ? "bg-forest-500/10 text-forest-600 dark:text-forest-400"
                 : "hover:bg-zinc-200 dark:hover:bg-zinc-700"
             }`}
           >
-            <div className="w-8 h-8 rounded bg-amber-500/20 border border-amber-500/30 flex items-center justify-center flex-shrink-0">
-              <Images size={16} className="text-amber-500" />
+            <div className="w-8 h-8 rounded bg-forest-500/20 border border-forest-500/30 flex items-center justify-center flex-shrink-0">
+              <Images size={16} className="text-forest-500" />
             </div>
             <div className="flex flex-col">
               <span className="text-[11px] font-medium">@all</span>
@@ -121,7 +121,7 @@ export function MediaAutocomplete({ media, query, onSelect, onClose }: Props) {
               onClick={() => onSelect(item)}
               className={`w-full flex items-center gap-2 px-2 py-1.5 text-left transition-colors ${
                 itemIndex === selectedIndex
-                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                  ? "bg-forest-500/10 text-forest-600 dark:text-forest-400"
                   : "hover:bg-zinc-200 dark:hover:bg-zinc-700"
               }`}
             >

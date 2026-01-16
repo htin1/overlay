@@ -102,7 +102,7 @@ export function RightPanel({ overlay, onUpdate, onRemove, media = [], onAddLayer
           {onAddLayer && (
             <button
               onClick={onAddLayer}
-              className="px-3 py-1.5 text-xs bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors"
+              className="px-3 py-1.5 text-xs bg-forest-500 hover:bg-forest-600 text-white rounded-lg transition-colors"
             >
               + New Layer
             </button>
@@ -124,7 +124,7 @@ export function RightPanel({ overlay, onUpdate, onRemove, media = [], onAddLayer
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md transition-colors ${
                   activeTab === tab.id
-                    ? "border border-amber-500 text-zinc-900 dark:text-white"
+                    ? "border border-forest-500 text-zinc-900 dark:text-white"
                     : "border border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
                 }`}
               >
@@ -219,7 +219,7 @@ export function RightPanel({ overlay, onUpdate, onRemove, media = [], onAddLayer
                                 const newCode = updateConfigValue(overlay.code, entry.key, e.target.value);
                                 onUpdate({ code: newCode });
                               }}
-                              className="flex-1 px-2 py-1.5 text-xs bg-zinc-100 dark:bg-zinc-800 rounded border-0 outline-none focus:ring-1 focus:ring-amber-500"
+                              className="flex-1 px-2 py-1.5 text-xs bg-zinc-100 dark:bg-zinc-800 rounded border-0 outline-none focus:ring-1 focus:ring-forest-500"
                             />
                           </div>
                         ) : entry.type === "number" ? (
@@ -230,7 +230,7 @@ export function RightPanel({ overlay, onUpdate, onRemove, media = [], onAddLayer
                               const newCode = updateConfigValue(overlay.code, entry.key, parseFloat(e.target.value) || 0);
                               onUpdate({ code: newCode });
                             }}
-                            className="w-full px-2 py-1.5 text-xs bg-zinc-100 dark:bg-zinc-800 rounded border-0 outline-none focus:ring-1 focus:ring-amber-500"
+                            className="w-full px-2 py-1.5 text-xs bg-zinc-100 dark:bg-zinc-800 rounded border-0 outline-none focus:ring-1 focus:ring-forest-500"
                           />
                         ) : (
                           <input
@@ -240,7 +240,7 @@ export function RightPanel({ overlay, onUpdate, onRemove, media = [], onAddLayer
                               const newCode = updateConfigValue(overlay.code, entry.key, e.target.value);
                               onUpdate({ code: newCode });
                             }}
-                            className="w-full px-2 py-1.5 text-xs bg-zinc-100 dark:bg-zinc-800 rounded border-0 outline-none focus:ring-1 focus:ring-amber-500"
+                            className="w-full px-2 py-1.5 text-xs bg-zinc-100 dark:bg-zinc-800 rounded border-0 outline-none focus:ring-1 focus:ring-forest-500"
                           />
                         )}
                       </div>
@@ -274,7 +274,7 @@ export function RightPanel({ overlay, onUpdate, onRemove, media = [], onAddLayer
                       <button
                         key={suggestion.label}
                         onClick={() => setChatInput(suggestion.prompt)}
-                        className="px-2.5 py-1.5 text-[11px] rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-amber-500 hover:text-white text-zinc-600 dark:text-zinc-400 transition-colors"
+                        className="px-2.5 py-1.5 text-[11px] rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-forest-500 hover:text-white text-zinc-600 dark:text-zinc-400 transition-colors"
                       >
                         {suggestion.label}
                       </button>
@@ -310,7 +310,7 @@ export function RightPanel({ overlay, onUpdate, onRemove, media = [], onAddLayer
                 return message.role === "user" ? (
                   <div
                     key={message.id}
-                    className="ml-6 border border-amber-500 text-zinc-900 dark:text-white rounded-xl rounded-tr-sm p-2.5 text-xs"
+                    className="ml-6 border border-forest-500 text-zinc-900 dark:text-white rounded-xl rounded-tr-sm p-2.5 text-xs"
                   >
                     {message.content}
                   </div>
@@ -366,7 +366,7 @@ export function RightPanel({ overlay, onUpdate, onRemove, media = [], onAddLayer
                   <button
                     type="submit"
                     disabled={isLoading || !chatInput.trim()}
-                    className="absolute right-2 bottom-2 p-1.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-md transition-colors"
+                    className="absolute right-2 bottom-2 p-1.5 bg-forest-500 hover:bg-forest-600 disabled:opacity-50 text-white rounded-md transition-colors"
                   >
                     {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                   </button>
