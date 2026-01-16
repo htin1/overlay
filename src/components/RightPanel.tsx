@@ -27,10 +27,13 @@ const SUGGESTIONS = [
   { label: "Image carousel", prompt: "Create a 3D perspective image carousel with @Sample 1, @Sample 2, and @Sample 3. Display all 3 images at once, with the middle one in focus." },
   { label: "Subscribe button", prompt: "YouTube-style subscribe button with an cursor that clicks the button" },
   { label: "Typing text", prompt: "Typewriter effect that types out 'Coming Soon...', 'Stay Tuned!' and 'Palmier 2026' (in purple color). All three sentences coming out one after the other. No background, just text. Jetbrains Mono font." },
-  { label: "Notification", prompt: "macOS-style notification that slides in from top-right with a Slack icon and message 'Palmier Animation is coming soon!'" },
+  { label: "Notification", prompt: "multiple macOS-style notifications that slides in from top-right with message 'Palmier Animation is coming soon!'. From iMessage, Slack, Microsft Teams, Gmail." },
   { label: "Claude Cowork", prompt: "Create an animation from @Sample 4 and it clicks on 'Create a file' button then it pops up the MacOS file explorer. You shoudl look at the image and recreate the animation with react, do not use the image in the code." },
   { label: "Logo reveal", prompt: "Animated a logo reveal provided in @Sample 5 along with the text 'Palmier' on its right. transparent background." },
-  { label: "Code Screenshot", prompt: "a vscode screenshot of some python functions"}
+  { label: "Code Screenshot", prompt: "a vscode screenshot of some python functions"},
+  { label: "Slack Message", prompt: "a Slack channel between Marcos and Harrison discussing about how to surf a barrel. Use slack color palette."},
+  { label: "Glass overlay", prompt: "a screenshot of a conversation between Michael and Dalton about who to fund for series A. Use Apple-like glass overlay style."},
+  { label: "Linkedin Page", prompt: "an animation of scrolling through a Linkedin page in Macbook view."},
 ];
 
 const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [

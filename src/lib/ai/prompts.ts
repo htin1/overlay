@@ -54,7 +54,8 @@ All 1000+ icons at lucide.dev/icons
 import { siGithub, siSpotify } from "simple-icons";
 <svg viewBox="0 0 24 24" width={48} fill={\`#\${siGithub.hex}\`}><path d={siGithub.path} /></svg>
 \`\`\`
-Available: siGithub, siX, siInstagram, siYoutube, siTiktok, siSpotify, siNetflix, siApple, siGoogle, siDiscord, siFigma, siNotion, siVercel, siReact, siStripe
+Examples: siIMessage, siGithub, siX, siInstagram, siYoutube, siTiktok, siSpotify, siNetflix, siApple, siGoogle, siDiscord, siTwitch, siReddit, siWhatsapp, siGmail
+**If a brand icon is not available** (e.g., Slack, LinkedIn), create a custom SVG component with the correct path data.
 
 ## Motion Principles
 1. **Never linear**—use spring or eased interpolate
