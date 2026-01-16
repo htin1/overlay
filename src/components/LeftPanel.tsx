@@ -156,7 +156,7 @@ export function LeftPanel({
           onClick={() => setActiveTab("media")}
           className={`flex-1 py-2.5 text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${
             activeTab === "media"
-              ? "text-zinc-900 dark:text-white border-b-2 border-indigo-500"
+              ? "text-zinc-900 dark:text-white border-b-2 border-amber-500"
               : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
           }`}
         >
@@ -167,7 +167,7 @@ export function LeftPanel({
           onClick={() => setActiveTab("layers")}
           className={`flex-1 py-2.5 text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${
             activeTab === "layers"
-              ? "text-zinc-900 dark:text-white border-b-2 border-indigo-500"
+              ? "text-zinc-900 dark:text-white border-b-2 border-amber-500"
               : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
           }`}
         >
@@ -190,7 +190,7 @@ export function LeftPanel({
               <div
                 className={`m-2 p-4 border-2 border-dashed rounded-lg text-center transition-colors ${
                   isDraggingFile
-                    ? "border-indigo-500 bg-indigo-500/10"
+                    ? "border-amber-500 bg-amber-500/10"
                     : "border-zinc-200 dark:border-zinc-700"
                 }`}
               >
@@ -200,7 +200,7 @@ export function LeftPanel({
 
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="text-xs text-indigo-500 hover:text-indigo-400 mb-3 block mx-auto"
+                  className="text-xs text-amber-500 hover:text-amber-400 mb-3 block mx-auto"
                 >
                   Browse files
                 </button>
@@ -214,13 +214,13 @@ export function LeftPanel({
                           value={urlInput}
                           onChange={(e) => setUrlInput(e.target.value)}
                           placeholder="Paste URL..."
-                          className="w-full pl-6 pr-2 py-1.5 text-[11px] bg-zinc-100 dark:bg-zinc-800 rounded border-0 focus:ring-1 focus:ring-indigo-500 outline-none"
+                          className="w-full pl-6 pr-2 py-1.5 text-[11px] bg-zinc-100 dark:bg-zinc-800 rounded border-0 focus:ring-1 focus:ring-amber-500 outline-none"
                         />
                       </div>
                       <button
                         type="submit"
                         disabled={!urlInput.trim()}
-                        className="px-2 py-1.5 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-30 text-white rounded transition-colors text-[11px]"
+                        className="px-2 py-1.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-30 text-white rounded transition-colors text-[11px]"
                       >
                         Add
                       </button>
@@ -297,7 +297,7 @@ export function LeftPanel({
                 <p className="text-zinc-400 text-sm mb-2">No layers yet</p>
                 <button
                   onClick={onAddLayer}
-                  className="text-xs text-indigo-500 hover:text-indigo-400"
+                  className="text-xs text-amber-500 hover:text-amber-400"
                 >
                   + Create your first layer
                 </button>
@@ -320,13 +320,13 @@ export function LeftPanel({
                       onDragEnd={() => { setDraggedId(null); setDragOverId(null); }}
                       className={`group flex items-center gap-1.5 px-2 py-2 cursor-pointer transition-colors ${
                         isSelected ? "bg-zinc-200 dark:bg-white/10" : "hover:bg-zinc-100 dark:hover:bg-white/5"
-                      } ${draggedId === overlay.id ? "opacity-50" : ""} ${dragOverId === overlay.id ? "border-t-2 border-indigo-500" : ""}`}
+                      } ${draggedId === overlay.id ? "opacity-50" : ""} ${dragOverId === overlay.id ? "border-t-2 border-amber-500" : ""}`}
                       onClick={() => onSelect(overlay.id)}
                     >
                       <div className="cursor-grab active:cursor-grabbing text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400">
                         <GripVertical size={14} />
                       </div>
-                      <div className={`w-2 h-2 rounded-full shrink-0 ${colors?.dot || "bg-indigo-500"}`} />
+                      <div className={`w-2 h-2 rounded-full shrink-0 ${colors?.dot || "bg-amber-500"}`} />
                       <span className={`text-sm truncate flex-1 ${isVisible ? "text-zinc-700 dark:text-zinc-300" : "text-zinc-400 dark:text-zinc-600 line-through"}`}>
                         {getOverlayLabel(overlay)}
                       </span>

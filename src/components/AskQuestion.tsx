@@ -20,7 +20,7 @@ interface Props {
 const optionClass = (selected: boolean, disabled?: boolean) =>
   `w-full text-left px-2 py-1.5 rounded-md transition-colors flex items-center gap-1.5 border ${
     selected
-      ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-400"
+      ? "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400"
       : "bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 border-transparent"
   } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`;
 
@@ -123,7 +123,7 @@ export function AskQuestion({ header, question, options, onSelect, disabled }: P
             <button
               onClick={() => customText.trim() && onSelect({ id: "custom", label: customText.trim() })}
               disabled={!customText.trim()}
-              className="p-1 text-indigo-500 hover:text-indigo-600 disabled:opacity-30"
+              className="p-1 text-amber-500 hover:text-amber-600 disabled:opacity-30"
             >
               <CornerDownLeft size={12} />
             </button>

@@ -13,8 +13,8 @@ export const TIMELINE_CONFIG = {
 // Overlay type colors - used in timeline
 export const OVERLAY_COLORS = {
   code: {
-    dot: "bg-indigo-500",
-    clip: "bg-indigo-500/40 border-indigo-500/60 hover:bg-indigo-500/50",
+    dot: "bg-amber-500",
+    clip: "bg-amber-500/40 border-amber-500/60 hover:bg-amber-500/50",
   },
 } as const;
 
