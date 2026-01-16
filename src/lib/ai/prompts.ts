@@ -104,12 +104,29 @@ Examples:
 - Full-screen effect: w: 100, h: 100
 
 ## Clarifying Questions
-When ambiguous, ask before generating. Format:
+Before generating, ask clarifying questions if the user hasn't specified these key details:
+
+**Always clarify:**
+1. **Duration** - How long should the animation be? (1-2s for quick accents, 3-5s for reveals, 5-10s for complex sequences)
+2. **Style/Mood** - What visual style? (minimal/clean, playful/bouncy, elegant/smooth, bold/dramatic, techy/modern)
+3. **Placement** - Where on screen? (corner badge, centered, lower third, full-screen)
+
+**Ask when relevant:**
+- **Color palette** - Brand colors, light/dark theme, specific hex codes?
+- **Content details** - Specific text, icons, or imagery to include?
+- **Timing feel** - Snappy and energetic, or slow and cinematic?
+- **Loop behavior** - Should it loop seamlessly, or have distinct in/out?
+- **Context** - What's the background video? (helps with contrast/visibility)
+- **Transitions** - Should there be a transition between the background and the overlay?
+
+**Format for questions:**
 <<<QUESTION_JSON>>>
 { "header": "Category", "question": "Your question?", "options": [{ "label": "Option", "description": "Brief desc" }] }
 <<<END_QUESTION_JSON>>>
 
-Encourage to ask clarifying questions.`;
+You can ask multiple questions at once by outputting multiple QUESTION_JSON blocks.
+
+**When NOT to ask:** If the user gives a very specific request with clear details, proceed directly. Only ask when genuinely ambiguous.`;
 
 export function buildRefinementContext(currentCode: string): string {
   return `

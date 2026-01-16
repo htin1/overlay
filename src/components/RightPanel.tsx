@@ -290,16 +290,20 @@ export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
                 const isLastMessage = index === messages.length - 1;
                 const isStreamingThis = isLoading && isLastMessage && message.role === "assistant";
 
-                if (message.role === "question" && message.questionData) {
+                if (message.role === "question" && message.questions) {
+                  const answeredIndices = message.answeredIndices ?? [];
                   return (
-                    <div key={message.id} className="mr-4">
-                      <AskQuestion
-                        header={message.questionData.header}
-                        question={message.questionData.question}
-                        options={message.questionData.options}
-                        onSelect={(option) => answerQuestion(message.id, option)}
-                        disabled={isLoading || message.answered || !isLastMessage}
-                      />
+                    <div key={message.id} className="mr-4 flex flex-col gap-3">
+                      {message.questions.map((q, qIndex) => (
+                        <AskQuestion
+                          key={`${message.id}-${qIndex}`}
+                          header={q.header}
+                          question={q.question}
+                          options={q.options}
+                          onSelect={(option) => answerQuestion(message.id, qIndex, option)}
+                          disabled={isLoading || answeredIndices.includes(qIndex) || !isLastMessage}
+                        />
+                      ))}
                     </div>
                   );
                 }
@@ -333,6 +337,20 @@ export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
                   </div>
                 );
               })}
+
+              {/* Show loading when waiting for response */}
+              {isLoading && messages.length > 0 && messages[messages.length - 1].role !== "assistant" && (
+                <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  <span className="flex items-center gap-1.5">
+                    <span className="animate-pulse">Waiting</span>
+                    <span className="flex gap-0.5">
+                      <span className="w-1 h-1 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <span className="w-1 h-1 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <span className="w-1 h-1 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </span>
+                  </span>
+                </div>
+              )}
 
               <div ref={messagesEndRef} />
             </div>

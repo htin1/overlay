@@ -22,8 +22,8 @@ export interface Message {
   id: string;
   role: "user" | "assistant" | "question";
   content: string;
-  questionData?: QuestionData;
-  answered?: boolean;
+  questions?: QuestionData[];
+  answeredIndices?: number[];
   mentionedMedia?: MentionedMedia[];
 }
 
@@ -42,24 +42,28 @@ interface StreamCallbacks {
 
 const MAX_RETRIES = 2; // Maximum automatic retry attempts for code errors
 
-function parseQuestionResponse(content: string): QuestionData | null {
-  const match = content.match(/<<<QUESTION_JSON>>>([\s\S]*?)<<<END_QUESTION_JSON>>>/);
-  if (!match) return null;
+function parseQuestionResponse(content: string): QuestionData[] {
+  const regex = /<<<QUESTION_JSON>>>([\s\S]*?)<<<END_QUESTION_JSON>>>/g;
+  const questions: QuestionData[] = [];
 
-  try {
-    const data = JSON.parse(match[1].trim());
-    return {
-      header: data.header,
-      question: data.question,
-      options: data.options.map((opt: { label: string; description?: string }, idx: number) => ({
-        id: `opt-${idx}`,
-        label: opt.label,
-        description: opt.description,
-      })),
-    };
-  } catch {
-    return null;
+  for (const match of content.matchAll(regex)) {
+    try {
+      const data = JSON.parse(match[1].trim());
+      questions.push({
+        header: data.header,
+        question: data.question,
+        options: data.options.map((opt: { label: string; description?: string }, idx: number) => ({
+          id: `opt-${idx}`,
+          label: opt.label,
+          description: opt.description,
+        })),
+      });
+    } catch {
+      // Skip malformed JSON blocks
+    }
   }
+
+  return questions;
 }
 
 export interface OverlayConfig {
@@ -175,13 +179,13 @@ export function useAnimationChat({
         );
       }
 
-      // Check if response contains a question
-      const questionData = parseQuestionResponse(fullContent);
-      if (questionData) {
+      // Check if response contains questions
+      const questions = parseQuestionResponse(fullContent);
+      if (questions.length > 0) {
         updateMessages((prev) =>
           prev.map((m) =>
             m.id === assistantMessageId
-              ? { ...m, role: "question", questionData, content: questionData.question }
+              ? { ...m, role: "question", questions, answeredIndices: [], content: questions.map(q => q.question).join("\n") }
               : m
           )
         );
@@ -224,12 +228,36 @@ export function useAnimationChat({
     }
   }, [updateMessages, currentCode, isLoading, onMessagesChange, onCodeGenerated, model]);
 
+  const pendingAnswersRef = useRef<Map<string, string[]>>(new Map());
+
   const answerQuestion = useCallback(
-    (questionId: string, option: QuestionOption) => {
+    (messageId: string, questionIndex: number, option: QuestionOption) => {
+      const message = messagesRef.current.find(m => m.id === messageId);
+      if (!message?.questions) return;
+
+      const totalQuestions = message.questions.length;
+
+      // Store the answer
+      if (!pendingAnswersRef.current.has(messageId)) {
+        pendingAnswersRef.current.set(messageId, new Array(totalQuestions).fill(""));
+      }
+      const answers = pendingAnswersRef.current.get(messageId)!;
+      answers[questionIndex] = option.label;
+
+      // Update answered indices
+      const answeredIndices = [...answers.keys()].filter(i => answers[i] !== "");
       updateMessages((prev) =>
-        prev.map((m) => (m.id === questionId ? { ...m, answered: true } : m))
+        prev.map((m) => (m.id === messageId ? { ...m, answeredIndices } : m))
       );
-      sendMessage(option.label);
+
+      // If all questions answered, send combined response
+      if (answeredIndices.length === totalQuestions) {
+        const combinedAnswer = message.questions
+          .map((q, i) => `${q.header || q.question}: ${answers[i]}`)
+          .join("\n");
+        pendingAnswersRef.current.delete(messageId);
+        sendMessage(combinedAnswer);
+      }
     },
     [sendMessage, updateMessages]
   );

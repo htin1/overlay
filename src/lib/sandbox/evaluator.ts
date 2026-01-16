@@ -1,5 +1,5 @@
 import { transform } from "sucrase";
-import React from "react";
+import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import * as LucideIcons from "lucide-react";
 import * as SimpleIcons from "simple-icons";
 import { interpolate, spring, Easing, AbsoluteFill, Sequence, useCurrentFrame, useVideoConfig } from "remotion";
@@ -80,6 +80,11 @@ export function evaluateAnimationCode(code: string): EvaluationResult {
     // Create function with provided context
     const createComponent = new Function(
       "React",
+      "useMemo",
+      "useState",
+      "useCallback",
+      "useEffect",
+      "useRef",
       "interpolate",
       "spring",
       "Easing",
@@ -95,6 +100,11 @@ export function evaluateAnimationCode(code: string): EvaluationResult {
     // Execute and get the component
     const Component = createComponent(
       React,
+      useMemo,
+      useState,
+      useCallback,
+      useEffect,
+      useRef,
       interpolate,
       spring,
       Easing,
