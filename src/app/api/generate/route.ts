@@ -1,5 +1,6 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
+import { openai } from "@ai-sdk/openai";
 import { streamText, type ImagePart, type TextPart } from "ai";
 import { ANIMATION_SYSTEM_PROMPT, buildRefinementContext, buildMediaContext } from "@/lib/ai/prompts";
 import { DEFAULT_AI_MODEL, type AIModelId } from "@/lib/constants";
@@ -78,11 +79,12 @@ async function buildMultimodalMessages(messages: IncomingMessage[]): Promise<Pro
   return result;
 }
 
-const MODEL_PROVIDERS: Record<AIModelId, () => ReturnType<typeof anthropic | typeof google>> = {
+const MODEL_PROVIDERS: Record<AIModelId, () => ReturnType<typeof anthropic | typeof google | typeof openai>> = {
   "sonnet-4.5": () => anthropic("claude-sonnet-4-5"),
   "haiku-4.5": () => anthropic("claude-haiku-4-5"),
   "gemini-3-flash": () => google("gemini-3-flash-preview"),
   "gemini-3-pro": () => google("gemini-3-pro-preview"),
+  "gpt-5.2": () => openai("gpt-5.2"),
 };
 
 export async function POST(req: Request) {

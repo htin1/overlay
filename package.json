@@ -11,6 +11,7 @@
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.12",
     "@ai-sdk/google": "^3.0.7",
+    "@ai-sdk/openai": "^3.0.12",
     "@ai-sdk/react": "^3.0.35",
     "@codemirror/lang-javascript": "^6.2.4",
     "@codesandbox/sandpack-client": "^2.19.8",
