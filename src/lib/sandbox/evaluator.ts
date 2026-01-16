@@ -2,7 +2,7 @@ import { transform } from "sucrase";
 import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import * as LucideIcons from "lucide-react";
 import * as SimpleIcons from "simple-icons";
-import { interpolate, spring, Easing, AbsoluteFill, Sequence, useCurrentFrame, useVideoConfig } from "remotion";
+import { interpolate, interpolateColors, spring, Easing, AbsoluteFill, Sequence, useCurrentFrame, useVideoConfig } from "remotion";
 
 // Pre-compute keys once at module load
 const LUCIDE_KEYS = Object.keys(LucideIcons).filter(k => k !== "default" && !k.startsWith("_"));
@@ -86,6 +86,7 @@ export function evaluateAnimationCode(code: string): EvaluationResult {
       "useEffect",
       "useRef",
       "interpolate",
+      "interpolateColors",
       "spring",
       "Easing",
       "AbsoluteFill",
@@ -106,6 +107,7 @@ export function evaluateAnimationCode(code: string): EvaluationResult {
       useEffect,
       useRef,
       interpolate,
+      interpolateColors,
       spring,
       Easing,
       AbsoluteFill,

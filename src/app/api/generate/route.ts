@@ -19,11 +19,13 @@ interface ProcessedMessage {
   content: MessageContent;
 }
 
-async function fetchImageAsBase64(url: string): Promise<string | null> {
+async function fetchImageAsBase64(url: string, baseUrl: string): Promise<string | null> {
   try {
-    const response = await fetch(url);
+    // Convert relative URLs to absolute
+    const absoluteUrl = url.startsWith("/") ? `${baseUrl}${url}` : url;
+    const response = await fetch(absoluteUrl);
     if (!response.ok) {
-      console.warn(`Failed to fetch image: ${url} (${response.status})`);
+      console.warn(`Failed to fetch image: ${absoluteUrl} (${response.status})`);
       return null;
     }
 
@@ -37,7 +39,7 @@ async function fetchImageAsBase64(url: string): Promise<string | null> {
   }
 }
 
-async function buildMultimodalMessages(messages: IncomingMessage[]): Promise<ProcessedMessage[]> {
+async function buildMultimodalMessages(messages: IncomingMessage[], baseUrl: string): Promise<ProcessedMessage[]> {
   const result: ProcessedMessage[] = [];
 
   for (const msg of messages) {
@@ -47,7 +49,7 @@ async function buildMultimodalMessages(messages: IncomingMessage[]): Promise<Pro
 
       // Fetch all images in parallel
       const imageMedia = msg.mentionedMedia.filter((m) => m.type === "image");
-      const imagePromises = imageMedia.map((m) => fetchImageAsBase64(m.url));
+      const imagePromises = imageMedia.map((m) => fetchImageAsBase64(m.url, baseUrl));
       const images = await Promise.all(imagePromises);
 
       // Add successfully fetched images
@@ -90,6 +92,10 @@ const MODEL_PROVIDERS: Record<AIModelId, () => ReturnType<typeof anthropic | typ
 export async function POST(req: Request) {
   const { messages, currentCode, model: requestedModel } = await req.json();
 
+  // Extract base URL from request for fetching relative URLs
+  const url = new URL(req.url);
+  const baseUrl = `${url.protocol}//${url.host}`;
+
   // Collect all mentioned media from messages for URL context
   const allMentionedMedia: MentionedMedia[] = [];
   for (const msg of messages as IncomingMessage[]) {
@@ -120,7 +126,7 @@ export async function POST(req: Request) {
   const model = MODEL_PROVIDERS[modelKey];
 
   // Build multimodal messages (includes base64 images for vision)
-  const processedMessages = await buildMultimodalMessages(messages as IncomingMessage[]);
+  const processedMessages = await buildMultimodalMessages(messages as IncomingMessage[], baseUrl);
 
   const result = streamText({
     model: model(),
