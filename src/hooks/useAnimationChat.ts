@@ -25,6 +25,7 @@ export interface Message {
   questions?: QuestionData[];
   answeredIndices?: number[];
   mentionedMedia?: MentionedMedia[];
+  isError?: boolean;
 }
 
 interface UseAnimationChatOptions {
@@ -221,6 +222,7 @@ export function useAnimationChat({
         id: crypto.randomUUID(),
         role: "assistant",
         content: "Sorry, I encountered an error generating the animation. Please try again.",
+        isError: true,
       }]);
     } finally {
       setIsLoading(false);
