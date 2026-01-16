@@ -26,7 +26,7 @@ export async function GET(
 
   const ext = filename.split(".").pop()?.toLowerCase() || "";
 
-  return new NextResponse(file, {
+  return new NextResponse(new Uint8Array(file), {
     headers: {
       "Content-Type": MIME_TYPES[ext] || "application/octet-stream",
       "Cache-Control": "public, max-age=31536000, immutable",

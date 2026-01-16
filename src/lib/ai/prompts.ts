@@ -133,9 +133,9 @@ export function buildMediaContext(media: MediaItem[]): string {
   const mediaList = media.map((m) => `- ${m.name} (${m.type}): ${m.url}`).join("\n");
   return `
 ## Available Media
-The user has uploaded the following media files that you can use in the animation:
+The user has mentioned the following media files to use in the animation:
 ${mediaList}
 
-When the user references a media file by name, use the corresponding URL in your code.
+Use the corresponding URL in your code.
 For images, use an <img> tag. For videos, use a <video> tag with autoPlay, muted, loop, and playsInline attributes.`;
 }

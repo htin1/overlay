@@ -15,12 +15,16 @@ export interface QuestionData {
   options: QuestionOption[];
 }
 
+export type { MentionedMedia } from "@/types/media";
+import type { MentionedMedia } from "@/types/media";
+
 export interface Message {
   id: string;
   role: "user" | "assistant" | "question";
   content: string;
   questionData?: QuestionData;
   answered?: boolean;
+  mentionedMedia?: MentionedMedia[];
 }
 
 export interface MediaContext {
@@ -114,7 +118,7 @@ export function useAnimationChat({
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const sendMessage = useCallback(async (content: string, isAutoRetry = false) => {
+  const sendMessage = useCallback(async (content: string, isAutoRetry = false, mentionedMedia?: MentionedMedia[]) => {
     // Skip isLoading check for auto-retries since we control the timing
     if (!content.trim() || (!isAutoRetry && isLoading)) return;
 
@@ -130,6 +134,7 @@ export function useAnimationChat({
       id: crypto.randomUUID(),
       role: "user",
       content: content.trim(),
+      mentionedMedia: mentionedMedia && mentionedMedia.length > 0 ? mentionedMedia : undefined,
     };
 
     updateMessages((prev) => [...prev, userMessage]);
@@ -144,9 +149,9 @@ export function useAnimationChat({
           messages: messagesRef.current.map((m) => ({
             role: m.role === "question" ? "assistant" : m.role,
             content: m.content,
+            mentionedMedia: m.mentionedMedia,
           })),
           currentCode,
-          media: media.length > 0 ? media : undefined,
           model,
         }),
       });
