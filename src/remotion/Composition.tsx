@@ -7,7 +7,7 @@ export interface CompositionProps {
   backgroundColor?: string;
 }
 
-export function VideoComposition({ overlays = [], backgroundColor = "#000000" }: CompositionProps): React.ReactNode {
+export function VideoComposition({ overlays = [], backgroundColor = "transparent" }: CompositionProps): React.ReactNode {
   return (
     <AbsoluteFill style={{ backgroundColor }}>
       {overlays.map((overlay) => (
