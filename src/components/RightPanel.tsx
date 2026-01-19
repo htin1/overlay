@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Trash2, Code2, Send, Loader2, Wand2, Check, Settings, Plus } from "lucide-react";
+import { Trash2, Code2, Send, Loader2, Wand2, Check, Settings, Plus, X, ChevronDown, ChevronRight } from "lucide-react";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { vscodeDark } from "@uiw/codemirror-theme-vscode";
@@ -43,6 +43,42 @@ const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "settings", label: "Settings", icon: <Settings size={12} /> },
   { id: "code", label: "Code", icon: <Code2 size={12} /> },
 ];
+
+function ToolCallDisplay({
+  icon,
+  label,
+  details,
+  isError,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  details?: string;
+  isError?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const hasDetails = !!details;
+
+  return (
+    <div className="text-[11px]">
+      <button
+        onClick={() => hasDetails && setIsOpen(!isOpen)}
+        disabled={!hasDetails}
+        className={`flex items-center gap-1 ${hasDetails ? "cursor-pointer hover:text-zinc-300" : "cursor-default"} ${isError ? "text-red-500" : "text-zinc-500 dark:text-zinc-400"}`}
+      >
+        {icon}
+        <span>{label}</span>
+        {hasDetails && (
+          isOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />
+        )}
+      </button>
+      {hasDetails && isOpen && (
+        <pre className="mt-1 ml-4 p-2 text-[10px] bg-zinc-100 dark:bg-zinc-800 rounded overflow-x-auto max-h-32 overflow-y-auto">
+          {details}
+        </pre>
+      )}
+    </div>
+  );
+}
 
 export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
   const { theme } = useTheme();
@@ -324,12 +360,13 @@ export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
                 }
 
                 return message.isError ? (
-                  <div
+                  <ToolCallDisplay
                     key={message.id}
-                    className="mr-6 border border-red-500 text-zinc-900 dark:text-white rounded-xl rounded-tl-sm p-2.5 text-xs"
-                  >
-                    {message.content}
-                  </div>
+                    icon={<X size={12} className="text-red-500" />}
+                    label="Error"
+                    isError
+                    details={message.content}
+                  />
                 ) : message.role === "user" ? (
                   <div
                     key={message.id}
@@ -341,10 +378,19 @@ export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
                   <div key={message.id} className="text-[11px] text-zinc-500 dark:text-zinc-400 space-y-1">
                     {/* Tool calls display */}
                     {message.toolCalls && message.toolCalls.length > 0 && (
-                      <span className="flex items-center gap-1">
-                        <Check size={12} className="text-zinc-400" />
-                        {message.toolCalls.map(t => t.name).join(", ")} called
-                      </span>
+                      <>
+                        {message.toolCalls.map((t, i) => {
+                          const hasDetails = t.name === "searchIcons" && t.args;
+                          return (
+                            <ToolCallDisplay
+                              key={`${message.id}-tool-${i}`}
+                              icon={<Check size={12} className="text-zinc-400" />}
+                              label={`${t.name} called`}
+                              details={hasDetails ? JSON.stringify(t.args, null, 2) : undefined}
+                            />
+                          );
+                        })}
+                      </>
                     )}
                     {isStreamingThis ? (
                       <span className="flex items-center gap-1.5">
