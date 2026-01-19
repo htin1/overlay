@@ -337,7 +337,14 @@ export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
                     {message.content}
                   </div>
                 ) : (
-                  <div key={message.id} className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  <div key={message.id} className="text-[11px] text-zinc-500 dark:text-zinc-400 space-y-1">
+                    {/* Tool calls display */}
+                    {message.toolCalls && message.toolCalls.length > 0 && (
+                      <span className="flex items-center gap-1">
+                        <Check size={12} className="text-zinc-400" />
+                        {message.toolCalls.map(t => t.name).join(", ")} called
+                      </span>
+                    )}
                     {isStreamingThis ? (
                       <span className="flex items-center gap-1.5">
                         <span className="animate-pulse">Generating</span>

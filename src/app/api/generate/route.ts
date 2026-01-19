@@ -1,8 +1,10 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 import { openai } from "@ai-sdk/openai";
-import { streamText, type ImagePart, type TextPart } from "ai";
+import { streamText, tool, stepCountIs, type ImagePart, type TextPart } from "ai";
+import { z } from "zod";
 import { ANIMATION_SYSTEM_PROMPT, buildRefinementContext, buildMediaContext } from "@/lib/ai/prompts";
+import { searchIcons, formatIconResults } from "@/lib/ai/icons";
 import { DEFAULT_AI_MODEL, type AIModelId } from "@/lib/constants";
 import type { MentionedMedia } from "@/types/media";
 
@@ -133,7 +135,40 @@ export async function POST(req: Request) {
     system: systemPrompt,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: processedMessages as any,
+    tools: {
+      searchIcons: tool({
+        description: "Search for icons across react-icons libraries (si for brands, fa6, md, hi2, tb, bs, io5, ri, vsc, gi). Use when unsure of exact icon name.",
+        inputSchema: z.object({
+          query: z.string().describe("Icon or brand name to search (e.g., 'github', 'slack', 'arrow')"),
+        }),
+        execute: ({ query }: { query: string }) => {
+          return formatIconResults(searchIcons(query, { limit: 10 }));
+        },
+      }),
+    },
+    stopWhen: stepCountIs(5),
   });
 
-  return result.toTextStreamResponse();
+  // Create custom stream that includes tool call markers
+  const encoder = new TextEncoder();
+  const customStream = new ReadableStream({
+    async start(controller) {
+      try {
+        for await (const part of result.fullStream) {
+          if (part.type === "text-delta") {
+            controller.enqueue(encoder.encode(`0:${JSON.stringify(part.text)}\n`));
+          } else if (part.type === "tool-call") {
+            controller.enqueue(encoder.encode(`9:${JSON.stringify({ toolName: part.toolName, args: part.input })}\n`));
+          }
+        }
+        controller.close();
+      } catch (error) {
+        controller.error(error);
+      }
+    },
+  });
+
+  return new Response(customStream, {
+    headers: { "Content-Type": "text/plain; charset=utf-8" },
+  });
 }

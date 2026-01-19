@@ -1,12 +1,36 @@
 import { transform } from "sucrase";
 import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import * as LucideIcons from "lucide-react";
-import * as SimpleIcons from "simple-icons";
+import * as IconsSi from "react-icons/si";
+import * as IconsFa6 from "react-icons/fa6";
+import * as IconsMd from "react-icons/md";
+import * as IconsHi2 from "react-icons/hi2";
+import * as IconsTb from "react-icons/tb";
+import * as IconsBs from "react-icons/bs";
+import * as IconsIo5 from "react-icons/io5";
+import * as IconsRi from "react-icons/ri";
+import * as IconsVsc from "react-icons/vsc";
+import * as IconsGi from "react-icons/gi";
 import { interpolate, interpolateColors, spring, Easing, AbsoluteFill, Sequence, useCurrentFrame, useVideoConfig } from "remotion";
 
 // Pre-compute keys once at module load
 const LUCIDE_KEYS = Object.keys(LucideIcons).filter(k => k !== "default" && !k.startsWith("_"));
-const SIMPLE_ICON_KEYS = Object.keys(SimpleIcons).filter(k => k.startsWith("si"));
+
+// Icon pack configuration: prefix -> available icon names
+const ICON_PACKS = {
+  Si: Object.keys(IconsSi).filter(k => k.startsWith("Si")),
+  Fa: Object.keys(IconsFa6).filter(k => k.startsWith("Fa")),
+  Md: Object.keys(IconsMd).filter(k => k.startsWith("Md")),
+  Hi: Object.keys(IconsHi2).filter(k => k.startsWith("Hi")),
+  Tb: Object.keys(IconsTb).filter(k => k.startsWith("Tb")),
+  Bs: Object.keys(IconsBs).filter(k => k.startsWith("Bs")),
+  Io: Object.keys(IconsIo5).filter(k => k.startsWith("Io")),
+  Ri: Object.keys(IconsRi).filter(k => k.startsWith("Ri")),
+  Vsc: Object.keys(IconsVsc).filter(k => k.startsWith("Vsc")),
+  Gi: Object.keys(IconsGi).filter(k => k.startsWith("Gi")),
+} as const;
+
+type IconPrefix = keyof typeof ICON_PACKS;
 
 export interface AnimationProps {
   frame: number;
@@ -54,24 +78,46 @@ export function evaluateAnimationCode(code: string): EvaluationResult {
       production: true,
     });
 
-    // Find all si* icon references in the code
-    const siIconsUsed = [...new Set(
-      (transpiledCode.match(/\bsi[A-Z][a-zA-Z]*/g) || [])
-    )];
+    // Find all react-icons references in the code
+    // Each prefix (Si, Fa, Md, etc.) maps to a different icon pack
+    const iconsByPack: Record<IconPrefix, string[]> = {
+      Si: [], Fa: [], Md: [], Hi: [], Tb: [], Bs: [], Io: [], Ri: [], Vsc: [], Gi: [],
+    };
 
-    // Check for missing simple-icons before execution
-    const missingSiIcons = siIconsUsed.filter(icon => !SIMPLE_ICON_KEYS.includes(icon));
-    if (missingSiIcons.length > 0) {
+    // Match icons for each prefix
+    for (const prefix of Object.keys(ICON_PACKS) as IconPrefix[]) {
+      const regex = new RegExp(`\\b${prefix}[A-Z][a-zA-Z0-9]*`, "g");
+      const matches = transpiledCode.match(regex) || [];
+      iconsByPack[prefix] = [...new Set(matches)];
+    }
+
+    // Check for missing icons in each pack
+    const missingIcons: string[] = [];
+    for (const prefix of Object.keys(ICON_PACKS) as IconPrefix[]) {
+      for (const icon of iconsByPack[prefix]) {
+        if (!ICON_PACKS[prefix].includes(icon)) {
+          missingIcons.push(icon);
+        }
+      }
+    }
+
+    if (missingIcons.length > 0) {
       return {
         component: null,
-        error: `Missing simple-icons: ${missingSiIcons.join(", ")}. These icons don't exist in the simple-icons package. Use only available icons like: siGithub, siX, siInstagram, siYoutube, siSpotify, siDiscord, siFigma, siNotion, siReact, siVercel, siStripe`,
+        error: `Missing icons: ${missingIcons.join(", ")}. Use the searchIcons tool to find the correct icon name.`,
       };
     }
+
+    // Build icon destructuring statements
+    const iconDestructuring = (Object.keys(ICON_PACKS) as IconPrefix[])
+      .filter(prefix => iconsByPack[prefix].length > 0)
+      .map(prefix => `const { ${iconsByPack[prefix].join(", ")} } = Icons${prefix};`)
+      .join("\n      ");
 
     // Wrap code with icon destructuring
     const wrappedCode = `
       const { ${LUCIDE_KEYS.join(", ")} } = LucideIcons;
-      ${siIconsUsed.length > 0 ? `const { ${siIconsUsed.join(", ")} } = SimpleIcons;` : ""}
+      ${iconDestructuring}
 
       ${transpiledCode}
       return typeof Animation !== 'undefined' ? Animation : null;
@@ -94,7 +140,16 @@ export function evaluateAnimationCode(code: string): EvaluationResult {
       "useCurrentFrame",
       "useVideoConfig",
       "LucideIcons",
-      "SimpleIcons",
+      "IconsSi",
+      "IconsFa",
+      "IconsMd",
+      "IconsHi",
+      "IconsTb",
+      "IconsBs",
+      "IconsIo",
+      "IconsRi",
+      "IconsVsc",
+      "IconsGi",
       wrappedCode
     );
 
@@ -115,7 +170,16 @@ export function evaluateAnimationCode(code: string): EvaluationResult {
       useCurrentFrame,
       useVideoConfig,
       LucideIcons,
-      SimpleIcons
+      IconsSi,
+      IconsFa6,
+      IconsMd,
+      IconsHi2,
+      IconsTb,
+      IconsBs,
+      IconsIo5,
+      IconsRi,
+      IconsVsc,
+      IconsGi
     );
 
     if (!Component) {

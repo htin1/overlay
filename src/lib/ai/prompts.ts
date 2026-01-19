@@ -44,13 +44,22 @@ import { Heart, Bell, Check, ArrowRight, Sparkles, Rocket } from "lucide-react";
 \`\`\`
 All 1000+ icons at lucide.dev/icons
 
-**Brand logos** (simple-icons):
+**Brand logos & other icons** (react-icons):
 \`\`\`tsx
-import { siGithub, siSpotify } from "simple-icons";
-<svg viewBox="0 0 24 24" width={48} fill={\`#\${siGithub.hex}\`}><path d={siGithub.path} /></svg>
+import { SiGithub, SiSpotify } from "react-icons/si";
+import { FaBell, FaHeart } from "react-icons/fa6";
+import { MdNotifications } from "react-icons/md";
+<SiGithub size={48} color="#181717" />
 \`\`\`
-Examples: siIMessage, siGithub, siX, siInstagram, siYoutube, siTiktok, siSpotify, siNetflix, siApple, siGoogle, siDiscord, siTwitch, siReddit, siWhatsapp, siGmail
-**If a brand icon is not available** (e.g., Slack, LinkedIn), create a custom SVG component with the correct path data.
+
+**IMPORTANT**: Use the \`searchIcons\` tool to find the correct icon name when:
+- You're unsure of the exact icon name
+- The brand/icon name might have a different spelling
+- You want to see what's available across different icon libraries
+
+Available libraries: si (brands), fa6 (Font Awesome), md (Material), hi2 (Heroicons), tb (Tabler), bs (Bootstrap), io5 (Ionicons), ri (Remix), vsc (VS Code), gi (Game icons)
+
+**If an icon is not found**, create a custom SVG component.
 
 ## Motion Principles
 1. **Never linear**—use spring or eased interpolate

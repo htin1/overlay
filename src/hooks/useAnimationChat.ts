@@ -18,6 +18,11 @@ export interface QuestionData {
 export type { MentionedMedia } from "@/types/media";
 import type { MentionedMedia } from "@/types/media";
 
+export interface ToolCall {
+  name: string;
+  args: Record<string, unknown>;
+}
+
 export interface Message {
   id: string;
   role: "user" | "assistant" | "question";
@@ -26,6 +31,7 @@ export interface Message {
   answeredIndices?: number[];
   mentionedMedia?: MentionedMedia[];
   isError?: boolean;
+  toolCalls?: ToolCall[];
 }
 
 interface UseAnimationChatOptions {
@@ -171,17 +177,51 @@ export function useAnimationChat({
 
       const decoder = new TextDecoder();
       let fullContent = "";
+      let toolCalls: ToolCall[] = [];
+      let buffer = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value, { stream: true });
-        fullContent += chunk;
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process complete lines from buffer
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || ""; // Keep incomplete line in buffer
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+
+          // Data stream format: <type>:<json-data>
+          const colonIndex = line.indexOf(":");
+          if (colonIndex === -1) continue;
+
+          const type = line.slice(0, colonIndex);
+          const data = line.slice(colonIndex + 1);
+
+          try {
+            if (type === "0") {
+              // Text content
+              fullContent += JSON.parse(data);
+            } else if (type === "9") {
+              // Tool call start
+              const toolCall = JSON.parse(data);
+              if (toolCall.toolName && !toolCalls.some(t => t.name === toolCall.toolName)) {
+                toolCalls.push({ name: toolCall.toolName, args: toolCall.args || {} });
+              }
+            }
+            // Type "a" is tool result - we don't need to display it
+          } catch {
+            // Skip malformed data
+          }
+        }
 
         updateMessages((prev) =>
           prev.map((m) =>
-            m.id === assistantMessageId ? { ...m, content: fullContent } : m
+            m.id === assistantMessageId
+              ? { ...m, content: fullContent, toolCalls: toolCalls.length > 0 ? [...toolCalls] : undefined }
+              : m
           )
         );
       }
