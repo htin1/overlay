@@ -1,9 +1,10 @@
 "use client";
 
-import { createContext, useContext, ReactNode } from "react";
+import { createContext, useContext, ReactNode, useState, useCallback } from "react";
 import { useOverlayManager } from "@/hooks/useOverlayManager";
 import { useMediaManager, type MediaItem } from "@/hooks/useMediaManager";
 import type { Overlay } from "@/overlays";
+import type { WebsiteExtraction } from "@/types/website";
 
 interface OverlayContextValue {
   // Overlay state
@@ -31,6 +32,10 @@ interface OverlayContextValue {
   media: MediaItem[];
   addMedia: (item: MediaItem) => void;
   removeMedia: (id: string) => void;
+
+  // Brand assets from website extraction
+  brandAssets: WebsiteExtraction | null;
+  setBrandAssets: (assets: WebsiteExtraction | null) => void;
 }
 
 const OverlayContext = createContext<OverlayContextValue | null>(null);
@@ -38,6 +43,11 @@ const OverlayContext = createContext<OverlayContextValue | null>(null);
 export function OverlayProvider({ children }: { children: ReactNode }) {
   const overlayManager = useOverlayManager();
   const mediaManager = useMediaManager();
+  const [brandAssets, setBrandAssetsState] = useState<WebsiteExtraction | null>(null);
+
+  const setBrandAssets = useCallback((assets: WebsiteExtraction | null) => {
+    setBrandAssetsState(assets);
+  }, []);
 
   const value: OverlayContextValue = {
     // Overlay state
@@ -65,6 +75,10 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
     media: mediaManager.media,
     addMedia: mediaManager.add,
     removeMedia: mediaManager.remove,
+
+    // Brand assets
+    brandAssets,
+    setBrandAssets,
   };
 
   return (

@@ -3,7 +3,7 @@ import { google } from "@ai-sdk/google";
 import { openai } from "@ai-sdk/openai";
 import { streamText, tool, stepCountIs, type ImagePart, type TextPart } from "ai";
 import { z } from "zod";
-import { ANIMATION_SYSTEM_PROMPT, buildRefinementContext, buildMediaContext } from "@/lib/ai/prompts";
+import { ANIMATION_SYSTEM_PROMPT, buildRefinementContext, buildMediaContext, buildBrandAssetsContext } from "@/lib/ai/prompts";
 import { searchIcons, formatIconResults } from "@/lib/ai/icons";
 import { DEFAULT_AI_MODEL, type AIModelId } from "@/lib/constants";
 import type { MentionedMedia } from "@/types/media";
@@ -91,8 +91,20 @@ const MODEL_PROVIDERS: Record<AIModelId, () => ReturnType<typeof anthropic | typ
   "gemini-3-pro": () => google("gemini-3-pro-preview"),
 };
 
+interface BrandAssets {
+  url: string;
+  domain: string;
+  colors: { hex: string; name?: string; source: string }[];
+  images: { url: string; alt?: string; type: string }[];
+  text: { content: string; type: string }[];
+}
+
 export async function POST(req: Request) {
-  const { messages, currentCode, model: requestedModel } = await req.json();
+  const body = await req.json();
+  const messages = body.messages as IncomingMessage[];
+  const currentCode = body.currentCode as string | undefined;
+  const requestedModel = body.model as string | undefined;
+  const brandAssets = body.brandAssets as BrandAssets | undefined;
 
   // Extract base URL from request for fetching relative URLs
   const url = new URL(req.url);
@@ -113,6 +125,10 @@ export async function POST(req: Request) {
   // Build system prompt with mentioned media URLs as context
   let systemPrompt = ANIMATION_SYSTEM_PROMPT;
 
+  if (brandAssets) {
+    systemPrompt += "\n\n" + buildBrandAssetsContext(brandAssets);
+  }
+
   if (allMentionedMedia.length > 0) {
     systemPrompt += "\n\n" + buildMediaContext(allMentionedMedia);
   }
@@ -122,8 +138,8 @@ export async function POST(req: Request) {
   }
 
   // Use requested model if valid, otherwise fall back to env var or default
-  const modelKey: AIModelId = (requestedModel in MODEL_PROVIDERS)
-    ? requestedModel
+  const modelKey: AIModelId = (requestedModel && requestedModel in MODEL_PROVIDERS)
+    ? requestedModel as AIModelId
     : (process.env.AI_MODEL as AIModelId) ?? DEFAULT_AI_MODEL;
   const model = MODEL_PROVIDERS[modelKey];
 

@@ -160,3 +160,42 @@ ${mediaList}
 Use the corresponding URL in your code.
 For images, use an <img> tag. For videos, use a <video> tag with autoPlay, muted, loop, and playsInline attributes.`;
 }
+
+interface BrandAssets {
+  url: string;
+  domain: string;
+  colors: { hex: string; name?: string; source: string }[];
+  images: { url: string; alt?: string; type: string }[];
+  text: { content: string; type: string }[];
+}
+
+export function buildBrandAssetsContext(assets: BrandAssets): string {
+  const parts: string[] = [`## Brand Assets from ${assets.domain}`];
+  parts.push(`The user has extracted brand assets from ${assets.url}. Use these when they reference "brand colors", "logo", or website-related content.`);
+
+  if (assets.colors.length > 0) {
+    const colorList = assets.colors
+      .slice(0, 6)
+      .map((c) => `- ${c.hex}${c.name ? ` (${c.name})` : ""}`)
+      .join("\n");
+    parts.push(`\n**Brand Colors:**\n${colorList}`);
+  }
+
+  if (assets.images.length > 0) {
+    const imageList = assets.images
+      .slice(0, 4)
+      .map((img) => `- ${img.type}: ${img.url}${img.alt ? ` (${img.alt})` : ""}`)
+      .join("\n");
+    parts.push(`\n**Brand Images:**\n${imageList}`);
+  }
+
+  if (assets.text.length > 0) {
+    const textList = assets.text
+      .slice(0, 3)
+      .map((t) => `- ${t.type}: "${t.content.slice(0, 100)}${t.content.length > 100 ? "..." : ""}"`)
+      .join("\n");
+    parts.push(`\n**Brand Text:**\n${textList}`);
+  }
+
+  return parts.join("\n");
+}

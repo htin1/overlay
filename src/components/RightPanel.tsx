@@ -46,7 +46,7 @@ const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
 
 export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
   const { theme } = useTheme();
-  const { media, addOverlay } = useOverlayContext();
+  const { media, addOverlay, brandAssets } = useOverlayContext();
   const [activeTab, setActiveTab] = useState<Tab>("chat");
   const [selectedModel, setSelectedModel] = useState<AIModelId>(DEFAULT_AI_MODEL);
   const [mentionedMedia, setMentionedMedia] = useState<MentionedMedia[]>([]);
@@ -74,6 +74,7 @@ export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
     messages: overlay?.messages ?? [],
     onMessagesChange: (messages) => onUpdate({ messages }),
     model: selectedModel,
+    brandAssets,
   });
 
   useEffect(() => {

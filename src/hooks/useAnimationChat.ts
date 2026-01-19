@@ -34,12 +34,21 @@ export interface Message {
   toolCalls?: ToolCall[];
 }
 
+interface BrandAssets {
+  url: string;
+  domain: string;
+  colors: { hex: string; name?: string; source: string }[];
+  images: { url: string; alt?: string; type: string }[];
+  text: { content: string; type: string }[];
+}
+
 interface UseAnimationChatOptions {
   onCodeGenerated?: (code: string, config?: OverlayConfig) => void;
   currentCode?: string;
   messages?: Message[];
   onMessagesChange?: (messages: Message[]) => void;
   model?: string;
+  brandAssets?: BrandAssets | null;
 }
 
 interface StreamCallbacks {
@@ -102,7 +111,8 @@ export function useAnimationChat({
   currentCode,
   messages: controlledMessages = [],
   onMessagesChange,
-  model
+  model,
+  brandAssets,
 }: UseAnimationChatOptions = {}) {
   const messagesRef = useRef(controlledMessages);
   messagesRef.current = controlledMessages;
@@ -161,6 +171,7 @@ export function useAnimationChat({
           messages: apiMessages,
           currentCode,
           model,
+          brandAssets: brandAssets ?? undefined,
         }),
       });
 
@@ -280,7 +291,7 @@ export function useAnimationChat({
       setIsLoading(false);
       streamCallbacksRef.current = null;
     }
-  }, [updateMessages, currentCode, isLoading, onMessagesChange, onCodeGenerated, model]);
+  }, [updateMessages, currentCode, isLoading, onMessagesChange, onCodeGenerated, model, brandAssets]);
 
   const pendingAnswersRef = useRef<Map<string, string[]>>(new Map());
 
