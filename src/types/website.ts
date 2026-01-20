@@ -21,4 +21,5 @@ export interface WebsiteExtraction {
   colors: ExtractedColor[];
   images: ExtractedImage[];
   text: ExtractedText[];
+  fonts: string[];
 }

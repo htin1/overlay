@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import { extractColors } from "./colors";
+import { extractFonts } from "./fonts";
 import { extractImages } from "./images";
 import { extractText } from "./text";
 import type { WebsiteExtraction } from "@/types/website";
@@ -84,6 +85,7 @@ export async function extractFromWebsite(url: string): Promise<WebsiteExtraction
       url: normalizedUrl,
       domain,
       colors: extractColors($, html),
+      fonts: extractFonts($),
       images: extractImages($, normalizedUrl),
       text: extractText($),
     };

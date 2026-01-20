@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Globe, Loader2, Plus, Copy, Check, X, AlertCircle, ChevronDown } from "lucide-react";
 import { useWebsiteExtractor } from "@/hooks/useWebsiteExtractor";
 import { useOverlayContext } from "@/contexts/OverlayContext";
@@ -214,6 +214,18 @@ export function WebsiteImporter({ expanded, onToggle }: WebsiteImporterProps) {
               </div>
             )}
 
+            {/* Fonts */}
+            {extraction.fonts && extraction.fonts.length > 0 && (
+              <div>
+                <div className="text-[10px] text-zinc-500 mb-1.5 font-medium">Fonts</div>
+                <div className="space-y-1">
+                  {extraction.fonts.slice(0, 5).map((font, i) => (
+                    <FontItem key={`${font}-${i}`} name={font} />
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Text */}
             {extraction.text.length > 0 && (
               <div>
@@ -257,6 +269,55 @@ function TextSnippet({ content, type }: { content: string; type: string }) {
       >
         {copied ? <Check size={10} /> : <Copy size={10} />}
       </button>
+    </div>
+  );
+}
+
+function FontItem({ name }: { name: string }) {
+  const [copied, setCopied] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  // Clean name for Google Fonts lookup
+  const googleName = name
+    .replace(/-Regular|-Bold|-Italic|-Book|-Medium|-Light|-Semibold|-Heavy|-Web.*$/gi, "")
+    .replace(/^Test\s+/i, "")
+    .replace(/-/g, " ")
+    .trim();
+
+  useEffect(() => {
+    const id = `font-${googleName.replace(/\s+/g, "-").toLowerCase()}`;
+    if (document.getElementById(id)) {
+      setLoaded(true);
+      return;
+    }
+    const link = document.createElement("link");
+    link.id = id;
+    link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(googleName).replace(/%20/g, "+")}:wght@400;700&display=swap`;
+    link.onload = () => setLoaded(true);
+    document.head.appendChild(link);
+  }, [googleName]);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(name);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <div
+      className="group flex items-center gap-1.5 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+      onClick={handleCopy}
+    >
+      <span
+        className="text-[13px] text-zinc-600 dark:text-zinc-300 flex-1 truncate"
+        style={loaded ? { fontFamily: `"${googleName}", sans-serif` } : undefined}
+      >
+        {name}
+      </span>
+      <span className="text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200">
+        {copied ? <Check size={10} /> : <Copy size={10} />}
+      </span>
     </div>
   );
 }
