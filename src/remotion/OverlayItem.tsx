@@ -4,15 +4,6 @@ interface Props {
   overlay: Overlay;
 }
 
-const glassStyle = {
-  backdropFilter: "blur(20px) saturate(180%)",
-  WebkitBackdropFilter: "blur(20px) saturate(180%)",
-  background: "rgba(255, 255, 255, 0.15)",
-  border: "1px solid rgba(255, 255, 255, 0.25)",
-  borderRadius: 16,
-  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
-};
-
 export function OverlayItem({ overlay }: Props): React.ReactNode {
   const definition = getOverlayDefinition(overlay.type);
   if (!definition) return null;
@@ -24,7 +15,6 @@ export function OverlayItem({ overlay }: Props): React.ReactNode {
     width: `${overlay.w}%`,
     height: `${overlay.h}%`,
     overflow: "hidden",
-    ...(overlay.glass ? glassStyle : {}),
   };
 
   const contentStyle: React.CSSProperties = {

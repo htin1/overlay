@@ -39,19 +39,24 @@ export function parseConfig(code: string): ConfigEntry[] {
   const configBody = code.slice(bounds.start, bounds.end);
   const entries: ConfigEntry[] = [];
 
-  // Track nesting to only parse top-level properties
-  let depth = 0;
-  for (const line of configBody.split("\n")) {
-    const atTopLevel = depth === 0;
+  // Track nesting path for dot notation keys
+  const pathStack: string[] = [];
 
-    for (const char of line) {
-      if (char === "{" || char === "[") depth++;
-      else if (char === "}" || char === "]") depth--;
+  for (const line of configBody.split("\n")) {
+    // Check for opening brace (nested object start)
+    const nestedMatch = line.match(/^\s*(\w+)\s*:\s*\{\s*$/);
+    if (nestedMatch) {
+      pathStack.push(nestedMatch[1]);
+      continue;
     }
 
-    if (!atTopLevel) continue;
+    // Check for closing brace
+    if (line.match(/^\s*\},?\s*$/) && pathStack.length > 0) {
+      pathStack.pop();
+      continue;
+    }
 
-    // Match simple key: value (skip arrays/objects), allow trailing comments
+    // Match simple key: value, allow trailing comments
     const match = line.match(/^\s*(\w+)\s*:\s*("[^"]*"|'[^']*'|-?\d+\.?\d*)\s*,?\s*(\/\/.*)?$/);
     if (!match) continue;
 
@@ -60,7 +65,8 @@ export function parseConfig(code: string): ConfigEntry[] {
       ? rawValue.slice(1, -1)
       : parseFloat(rawValue);
 
-    entries.push({ key, value, type: detectType(value) });
+    const fullKey = pathStack.length > 0 ? `${pathStack.join(".")}.${key}` : key;
+    entries.push({ key: fullKey, value, type: detectType(value) });
   }
 
   return entries;
@@ -69,7 +75,9 @@ export function parseConfig(code: string): ConfigEntry[] {
 export function updateConfigValue(code: string, key: string, newValue: string | number): string {
   if (!code) return code;
   const formatted = typeof newValue === "string" ? `"${newValue}"` : String(newValue);
-  const regex = new RegExp(`(^\\s*${key}\\s*:\\s*)("[^"]*"|'[^']*'|-?\\d+\\.?\\d*)`, "m");
+  // For nested keys like "colors.glass", extract the last part
+  const leafKey = key.includes(".") ? key.split(".").pop()! : key;
+  const regex = new RegExp(`(^\\s*${leafKey}\\s*:\\s*)("[^"]*"|'[^']*'|-?\\d+\\.?\\d*)`, "m");
   return code.replace(regex, `$1${formatted}`);
 }
 

@@ -10,7 +10,8 @@ import { interpolate, spring } from "remotion";
 
 const CONFIG = {
   durationFrames: 90, // REQUIRED (30fps, so 90 = 3s)
-  // Add user-adjustable values: colors as hex, durations in frames
+  // Colors: ALWAYS use hex (e.g., "#3c3c41"), NEVER rgba in CONFIG
+  // For transparency: use separate opacity value (e.g., glassColor: "#3c3c41", glassOpacity: 0.4)
 };
 
 export default function Animation({
@@ -84,6 +85,37 @@ items.map((item, i) => {
 // Spring pop with offset
 const scale = spring({ frame: Math.max(0, frame - 4), fps: 30, config: { damping: 12 } });
 \`\`\`
+
+## Glass Style (for notifications, toasts, cards, UI elements)
+Use premium dark glassmorphism for any notification, toast, card, or floating UI element:
+
+\`\`\`tsx
+const glassCard: React.CSSProperties = {
+  // Gradient for depth - lighter at top, darker at bottom
+  background: "linear-gradient(180deg, rgba(80, 80, 85, 0.5) 0%, rgba(40, 40, 45, 0.45) 100%)",
+  backdropFilter: "blur(50px) saturate(180%) brightness(1.1)",
+  WebkitBackdropFilter: "blur(50px) saturate(180%) brightness(1.1)",
+  borderRadius: 20,
+  // Subtle light border
+  border: "1px solid rgba(255, 255, 255, 0.15)",
+  // Layered shadows: outer depth + inner top highlight + inner bottom shadow
+  boxShadow: \`
+    0 10px 40px rgba(0, 0, 0, 0.35),
+    0 2px 10px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1)
+  \`,
+  padding: "14px 18px",
+};
+\`\`\`
+
+**Premium glass rules:**
+- NEVER use solid backgrounds like \`#fff\` - always semi-transparent
+- Use **gradient backgrounds** (lighter top → darker bottom) for 3D depth
+- **Layered box-shadows**: outer shadow + inner top highlight + inner bottom shadow
+- High blur (40-60px) + saturation (150-200%) + slight brightness boost
+- Text: \`rgba(255,255,255,0.95)\` titles, \`rgba(255,255,255,0.55)\` subtitles
+- Border radius 16-24px for soft pill shape
 
 ## Media
 \`\`\`tsx
