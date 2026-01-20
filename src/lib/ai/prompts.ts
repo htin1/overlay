@@ -87,40 +87,39 @@ const scale = spring({ frame: Math.max(0, frame - 4), fps: 30, config: { damping
 \`\`\`
 
 ## Glass Style (for notifications, toasts, cards, UI elements)
-Use premium dark glassmorphism for any notification, toast, card, or floating UI element:
+Use transparent glassmorphism for any notification, toast, card, or floating UI element:
 
 \`\`\`tsx
 const glassCard: React.CSSProperties = {
-  // Gradient for depth - lighter at top, darker at bottom
-  background: "linear-gradient(180deg, rgba(80, 80, 85, 0.5) 0%, rgba(40, 40, 45, 0.45) 100%)",
-  backdropFilter: "blur(50px) saturate(180%) brightness(1.1)",
-  WebkitBackdropFilter: "blur(50px) saturate(180%) brightness(1.1)",
+  // Very transparent with subtle gradient
+  background: "linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%)",
+  backdropFilter: "blur(40px) saturate(150%)",
+  WebkitBackdropFilter: "blur(40px) saturate(150%)",
   borderRadius: 20,
-  // Subtle light border
-  border: "1px solid rgba(255, 255, 255, 0.15)",
-  // Layered shadows: outer depth + inner top highlight + inner bottom shadow
+  // Light border for definition
+  border: "1px solid rgba(255, 255, 255, 0.2)",
+  // Subtle shadows
   boxShadow: \`
-    0 10px 40px rgba(0, 0, 0, 0.35),
-    0 2px 10px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.1)
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15)
   \`,
   padding: "14px 18px",
 };
 \`\`\`
 
 **Premium glass rules:**
-- NEVER use solid backgrounds like \`#fff\` - always semi-transparent
-- Use **gradient backgrounds** (lighter top → darker bottom) for 3D depth
-- **Layered box-shadows**: outer shadow + inner top highlight + inner bottom shadow
-- High blur (40-60px) + saturation (150-200%) + slight brightness boost
-- Text: \`rgba(255,255,255,0.95)\` titles, \`rgba(255,255,255,0.55)\` subtitles
+- NEVER use solid backgrounds - keep it very transparent (0.06-0.15 opacity)
+- Use **subtle gradient** (slightly lighter top → slightly darker bottom)
+- **Soft shadows** - less aggressive than dark mode
+- High blur (40-50px) + saturation for depth
+- Text: \`rgba(255,255,255,0.95)\` titles, \`rgba(255,255,255,0.6)\` subtitles
 - Border radius 16-24px for soft pill shape
 
 ## Media
+**IMPORTANT**: Always add \`crossOrigin="anonymous"\` to enable video export.
 \`\`\`tsx
-<img src={url} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-<video src={url} autoPlay muted loop playsInline style={{ objectFit: "cover" }} />
+<img src={url} crossOrigin="anonymous" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+<video src={url} crossOrigin="anonymous" autoPlay muted loop playsInline style={{ objectFit: "cover" }} />
 \`\`\`
 
 ## Overlay Size & Position
@@ -190,7 +189,7 @@ The user has mentioned the following media files to use in the animation:
 ${mediaList}
 
 Use the corresponding URL in your code.
-For images, use an <img> tag. For videos, use a <video> tag with autoPlay, muted, loop, and playsInline attributes.`;
+For images, use an <img> tag with crossOrigin="anonymous". For videos, use a <video> tag with crossOrigin="anonymous", autoPlay, muted, loop, and playsInline attributes.`;
 }
 
 interface BrandAssets {
