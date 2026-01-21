@@ -24,9 +24,7 @@ Available tools:
 - You're unsure of the exact icon name
 
 **Use readSkillRule when:**
-- You need detailed guidance on specific Remotion patterns (timing, transitions, sequencing)
-- The user asks for advanced animation techniques
-- You want to ensure best practices for complex animations`;
+- Before generating code, read the relevant skills to help you use Remotion effectively.`
 
 // Part 2: Coding Structure (component structure, icons, media, glass style)
 export const CODING_STRUCTURE_PROMPT = `## Code Component Structure
