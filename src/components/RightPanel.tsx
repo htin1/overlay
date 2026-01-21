@@ -59,16 +59,21 @@ function ThinkingIndicator({ text = "Thinking" }: { text?: string }) {
   );
 }
 
-const TOOL_INFO: Record<string, { icon: React.ReactNode; label: string; activeLabel: string }> = {
-  generate: { icon: <Check size={12} />, label: "Generated", activeLabel: "Generating..." },
-  askQuestions: { icon: <MessageCircleQuestion size={12} />, label: "Asked questions", activeLabel: "Asking questions..." },
-  searchIcons: { icon: <Search size={12} />, label: "Searched icons", activeLabel: "Searching icons..." },
+const TOOL_INFO: Record<string, { icon: React.ReactNode; label: string }> = {
+  generate: { icon: <Check size={12} />, label: "Generated" },
+  askQuestions: { icon: <MessageCircleQuestion size={12} />, label: "Asked questions" },
+  searchIcons: { icon: <Search size={12} />, label: "Searched icons" },
 };
 
 function ToolCallDisplay({ toolCall, isStreaming }: { toolCall: ToolCall; isStreaming: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
-  const info = TOOL_INFO[toolCall.name] || { icon: <Wand2 size={12} />, label: toolCall.name, activeLabel: `${toolCall.name}...` };
+  const info = TOOL_INFO[toolCall.name] || { icon: <Wand2 size={12} />, label: toolCall.name };
   const isPending = toolCall.status === "pending" && isStreaming;
+
+  // Show cooking indicator while tool is pending
+  if (isPending) {
+    return <ThinkingIndicator text="Cooking" />;
+  }
 
   const details = toolCall.name === "searchIcons"
     ? `Query: "${(toolCall.args as { query?: string }).query}"${toolCall.result ? `\n\nResults:\n${toolCall.result}` : ""}`
@@ -79,12 +84,10 @@ function ToolCallDisplay({ toolCall, isStreaming }: { toolCall: ToolCall; isStre
       <button
         onClick={() => details && setIsOpen(!isOpen)}
         disabled={!details}
-        className={`flex items-center gap-1.5 ${details ? "cursor-pointer hover:text-zinc-300" : "cursor-default"} ${
-          isPending ? "text-zinc-400" : "text-zinc-500 dark:text-zinc-400"
-        }`}
+        className={`flex items-center gap-1.5 ${details ? "cursor-pointer hover:text-zinc-300" : "cursor-default"} text-zinc-500 dark:text-zinc-400`}
       >
-        {isPending ? <Loader2 size={12} className="animate-spin" /> : info.icon}
-        <span>{isPending ? info.activeLabel : info.label}</span>
+        {info.icon}
+        <span>{info.label}</span>
         {details && (isOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />)}
       </button>
       {details && isOpen && (
@@ -314,16 +317,15 @@ export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
                   );
                 }
 
-                // Show thinking between tool calls (all complete but still streaming)
-                const allToolsComplete = message.toolCalls?.length && message.toolCalls.every((t) => t.status === "complete");
-                const isThinkingBetweenCalls = isStreaming && allToolsComplete && !message.toolCalls?.some((t) => t.name === "generate" || t.name === "askQuestions");
+                // Show thinking when streaming and no pending tool calls (waiting for next action)
+                const hasPendingTool = message.toolCalls?.some((t) => t.status === "pending");
+                const hasTerminalTool = message.toolCalls?.some((t) => t.name === "generate" || t.name === "askQuestions");
+                const showThinking = isStreaming && !hasPendingTool && !hasTerminalTool;
 
                 return (
                   <div key={message.id} className="text-[11px] text-zinc-500 dark:text-zinc-400 space-y-1.5">
-                    {message.toolCalls?.map((t) => <ToolCallDisplay key={t.id} toolCall={t} isStreaming={isStreaming} />)}
-                    {isStreaming && !message.toolCalls?.length && !message.content && <ThinkingIndicator />}
-                    {isThinkingBetweenCalls && <ThinkingIndicator />}
-                    {message.content && !message.toolCalls?.some((t) => t.name === "generate" || t.name === "askQuestions") && (
+                    {/* Show text content */}
+                    {message.content && (
                       <div className="prose prose-xs prose-zinc dark:prose-invert max-w-none">
                         <ReactMarkdown
                           components={{
@@ -339,6 +341,10 @@ export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
                         </ReactMarkdown>
                       </div>
                     )}
+                    {/* Show tool calls */}
+                    {message.toolCalls?.map((t) => <ToolCallDisplay key={t.id} toolCall={t} isStreaming={isStreaming} />)}
+                    {/* Show thinking when waiting */}
+                    {showThinking && <ThinkingIndicator />}
                   </div>
                 );
               })}
