@@ -63,27 +63,82 @@ Available libraries: si (brands), fa6 (Font Awesome), md (Material), hi2 (Heroic
 **If an icon is not found**, create a custom SVG component.
 
 ## Motion Principles
-1. **Never linear**—use spring or eased interpolate
-2. **Stagger multiple elements** (3-5 frame delays)
-3. **Offset properties**—opacity finishes before position which finishes before scale
-4. **Timing = weight**: small/light = fast (10-15f), large/heavy = slow (20-30f)
-5. **Exit animations**: \`const exitStart = durationInFrames - 20;\`
-6. **Use transform** (not top/left) for performance
+
+### The Laws of Motion
+1. **Never linear** — always use spring or eased interpolate
+2. **Arcs over lines** — combine X + Y motion with offset timing for curved paths
+3. **Mass determines speed** — light/small = fast (6-10f), heavy/large = slow (15-25f)
+4. **Asymmetric timing** — acceleration ≠ deceleration (enter ease-out, exit ease-in)
+
+### Anticipation & Follow-Through
+5. **Anticipation** — small reverse movement (5-10%) before main action
+6. **Overshoot** — go 5-15% past target, then settle back (spring damping < 15)
+7. **Follow-through** — elements stop at different rates: opacity → position → scale → rotation
+8. **Overlapping action** — never end all properties on same frame
+
+### Choreography (Multiple Elements)
+9. **Stagger timing** — 2-4 frame delays between elements (60-120ms)
+10. **Directional flow** — animate in reading order: left→right, top→bottom
+11. **Single focal point** — one element leads, others follow
+12. **Shared anchors** — keep one element visible throughout transition for continuity
+13. **Origin from action** — elements emerge from where user would "click"
+
+### Hierarchy & Staging
+14. **Importance = emphasis** — primary elements get larger movements, longer durations
+15. **Layered animation** — combine 2-3 properties: fade + rise + scale
+16. **Secondary action** — add supporting motion (shadow shift, subtle pulse, glow)
+17. **Staging** — dim/blur background elements to focus attention
+
+### Timing Reference (30fps)
+- Small (icons, badges): enter 6-8f, exit 5-6f — snappy
+- Medium (buttons, cards): enter 10-12f, exit 8-10f — standard
+- Large (modals, panels): enter 15-20f, exit 12-15f — weighty
+- Text: enter 10-15f, **hold 15f minimum** after settling for readability
+- Exit animations: \`const exitStart = durationInFrames - 20;\`
+
+### Common Mistakes to Avoid
+- ❌ All elements animating at once (feels chaotic)
+- ❌ Linear motion (feels robotic)
+- ❌ Same duration for all properties (feels mechanical)
+- ❌ Text moving too fast to read (< 0.5s visible)
+- ❌ No anticipation on sudden movements (feels jarring)
+- ❌ Straight-line paths (feels unnatural)
 
 ## Common Patterns
 \`\`\`tsx
-// Fade + rise entrance
-const opacity = interpolate(frame, [0, 15], [0, 1], { extrapolateRight: "clamp" });
-const y = interpolate(frame, [0, 20], [20, 0], { extrapolateRight: "clamp" });
+// Fade + rise entrance (follow-through: opacity ends before position)
+const opacity = interpolate(frame, [0, 10], [0, 1], { extrapolateRight: "clamp" });
+const y = interpolate(frame, [0, 15], [25, 0], { extrapolateRight: "clamp" });
 
-// Staggered items
+// Anticipation + overshoot (for "pop" effects)
+const anticipate = interpolate(frame, [0, 4], [1, 0.92], { extrapolateRight: "clamp" });
+const expand = spring({ frame: Math.max(0, frame - 4), fps: 30, config: { damping: 10, stiffness: 200 } });
+const scale = frame < 4 ? anticipate : expand;
+
+// Arc motion (curved entrance - combine X + Y with different timing)
+const progress = interpolate(frame, [0, 20], [0, 1], { extrapolateRight: "clamp" });
+const x = interpolate(progress, [0, 0.5, 1], [-60, -20, 0]);
+const y = interpolate(progress, [0, 0.3, 1], [40, -10, 0]); // overshoot arc
+
+// Choreographed stagger with hierarchy
 items.map((item, i) => {
-  const f = Math.max(0, frame - i * 4);
-  const opacity = interpolate(f, [0, 15], [0, 1], { extrapolateRight: "clamp" });
+  const delay = i * 3; // 3 frame stagger
+  const f = Math.max(0, frame - delay);
+  const duration = i === 0 ? 15 : 12; // primary element = longer
+  const distance = i === 0 ? 30 : 20; // primary element = larger movement
+  const opacity = interpolate(f, [0, duration * 0.7], [0, 1], { extrapolateRight: "clamp" });
+  const y = interpolate(f, [0, duration], [distance, 0], { extrapolateRight: "clamp" });
 });
 
-// Spring pop with offset
-const scale = spring({ frame: Math.max(0, frame - 4), fps: 30, config: { damping: 12 } });
+// Follow-through (layered end times - opacity → position → scale)
+const opacity = interpolate(frame, [0, 10], [0, 1], { extrapolateRight: "clamp" });
+const y = interpolate(frame, [0, 14], [25, 0], { extrapolateRight: "clamp" });
+const scale = interpolate(frame, [0, 18], [0.9, 1], { extrapolateRight: "clamp" });
+
+// Secondary action (subtle supporting animation)
+const mainScale = spring({ frame, fps: 30, config: { damping: 12 } });
+const glowOpacity = interpolate(frame, [5, 15, 25], [0, 0.3, 0], { extrapolateRight: "clamp" });
+const shadowBlur = interpolate(frame, [0, 20], [10, 25], { extrapolateRight: "clamp" });
 \`\`\`
 
 ## Glass Style (for notifications, toasts, cards, UI elements)
