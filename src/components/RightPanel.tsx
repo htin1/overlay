@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Trash2, Code2, Send, Loader2, Wand2, Check, Settings, Plus, X, ChevronDown, ChevronRight } from "lucide-react";
+import { Trash2, Code2, Send, Loader2, Wand2, Settings, Plus, X, ChevronDown, ChevronRight, MessageCircleQuestion, Check, Search } from "lucide-react";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { vscodeDark } from "@uiw/codemirror-theme-vscode";
+import ReactMarkdown from "react-markdown";
 import type { Overlay } from "@/overlays";
 import { useTheme } from "@/hooks/useTheme";
-import { useAnimationChat } from "@/hooks/useAnimationChat";
+import { useAnimationChat, type ToolCall } from "@/hooks/useAnimationChat";
 import { useOverlayContext } from "@/contexts/OverlayContext";
 import type { MentionedMedia } from "@/types/media";
 import { AskQuestion } from "./AskQuestion";
@@ -30,12 +31,12 @@ const SUGGESTIONS = [
   { label: "Claude Cowork", prompt: "Create an animation from @Sample 4 and it clicks on 'Create a file' button then it pops up the MacOS file explorer. You shoudl look at the image and recreate the animation with react, do not use the image in the code." },
   { label: "Logo reveal", prompt: "Animated a logo reveal provided in @Sample 5 along with the text 'Palmier' on its right. transparent background." },
   { label: "Orbit cards", prompt: "Create an orbit-style card carousel with @Sample 1, @Sample 2, and @Sample 3. Cards arranged in a fan/arc pattern emerging from a curved surface at the bottom (like sitting on a sphere). Each card has rounded corners, slight rotation at different angles, and overlaps with neighbors. Center card is most prominent and upright, outer cards tilt away. Add subtle shadows between cards for depth. Smooth animation that rotates the cards around the orbit." },
-  { label: "Code Screenshot", prompt: "a vscode screenshot of some python functions"},
-  { label: "Slack Message", prompt: "a Slack channel between Marcos and Harrison discussing about how to surf a barrel. Use slack color palette."},
-  { label: "Glass overlay", prompt: "a screenshot of a conversation between Michael and Dalton about who to fund for series A. Use Apple-like glass overlay style."},
-  { label: "Linkedin Page", prompt: "an animation of scrolling through a Linkedin page in Macbook view."},
-  { label: "Three Blue One Brown", prompt: "a three-blue-one-brown style animation explaining the difference between a sin wave and a cosine wave. Add caption at the bottom (colored animation so it looks like reading it word by word). 30 seconds, content is very detailed and should explain nicely to someone who doesn't understand the concept."},
-  { label: "ChatGPT", prompt: "a screenshot of ChatGPT UI with a conversation between a user and ChatGPT. The user asks: 'How to use Adobe After Effects?'. ChatGPT response something funny like: you still use after effects in 2026? use palmier instead! Use ChatGPT color palette."},
+  { label: "Code Screenshot", prompt: "a vscode screenshot of some python functions" },
+  { label: "Slack Message", prompt: "a Slack channel between Marcos and Harrison discussing about how to surf a barrel. Use slack color palette." },
+  { label: "Glass overlay", prompt: "a screenshot of a conversation between Michael and Dalton about who to fund for series A. Use Apple-like glass overlay style." },
+  { label: "Linkedin Page", prompt: "an animation of scrolling through a Linkedin page in Macbook view." },
+  { label: "Three Blue One Brown", prompt: "a three-blue-one-brown style animation explaining the difference between a sin wave and a cosine wave. Add caption at the bottom (colored animation so it looks like reading it word by word). 30 seconds, content is very detailed and should explain nicely to someone who doesn't understand the concept." },
+  { label: "ChatGPT", prompt: "a screenshot of ChatGPT UI with a conversation between a user and ChatGPT. The user asks: 'How to use Adobe After Effects?'. ChatGPT response something funny like: you still use after effects in 2026? use palmier instead! Use ChatGPT color palette." },
 ];
 
 const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
@@ -44,35 +45,50 @@ const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "code", label: "Code", icon: <Code2 size={12} /> },
 ];
 
-function ToolCallDisplay({
-  icon,
-  label,
-  details,
-  isError,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  details?: string;
-  isError?: boolean;
-}) {
+// Reusable thinking/loading indicator
+function ThinkingIndicator({ text = "Thinking" }: { text?: string }) {
+  return (
+    <span className="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+      <span className="animate-pulse">{text}</span>
+      <span className="flex gap-0.5">
+        {[0, 150, 300].map((delay) => (
+          <span key={delay} className="w-1 h-1 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: `${delay}ms` }} />
+        ))}
+      </span>
+    </span>
+  );
+}
+
+const TOOL_INFO: Record<string, { icon: React.ReactNode; label: string; activeLabel: string }> = {
+  generate: { icon: <Check size={12} />, label: "Generated", activeLabel: "Generating..." },
+  askQuestions: { icon: <MessageCircleQuestion size={12} />, label: "Asked questions", activeLabel: "Asking questions..." },
+  searchIcons: { icon: <Search size={12} />, label: "Searched icons", activeLabel: "Searching icons..." },
+};
+
+function ToolCallDisplay({ toolCall, isStreaming }: { toolCall: ToolCall; isStreaming: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
-  const hasDetails = !!details;
+  const info = TOOL_INFO[toolCall.name] || { icon: <Wand2 size={12} />, label: toolCall.name, activeLabel: `${toolCall.name}...` };
+  const isPending = toolCall.status === "pending" && isStreaming;
+
+  const details = toolCall.name === "searchIcons"
+    ? `Query: "${(toolCall.args as { query?: string }).query}"${toolCall.result ? `\n\nResults:\n${toolCall.result}` : ""}`
+    : null;
 
   return (
     <div className="text-[11px]">
       <button
-        onClick={() => hasDetails && setIsOpen(!isOpen)}
-        disabled={!hasDetails}
-        className={`flex items-center gap-1 ${hasDetails ? "cursor-pointer hover:text-zinc-300" : "cursor-default"} ${isError ? "text-red-500" : "text-zinc-500 dark:text-zinc-400"}`}
+        onClick={() => details && setIsOpen(!isOpen)}
+        disabled={!details}
+        className={`flex items-center gap-1.5 ${details ? "cursor-pointer hover:text-zinc-300" : "cursor-default"} ${
+          isPending ? "text-zinc-400" : "text-zinc-500 dark:text-zinc-400"
+        }`}
       >
-        {icon}
-        <span>{label}</span>
-        {hasDetails && (
-          isOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />
-        )}
+        {isPending ? <Loader2 size={12} className="animate-spin" /> : info.icon}
+        <span>{isPending ? info.activeLabel : info.label}</span>
+        {details && (isOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />)}
       </button>
-      {hasDetails && isOpen && (
-        <pre className="mt-1 ml-4 p-2 text-[10px] bg-zinc-100 dark:bg-zinc-800 rounded overflow-x-auto max-h-32 overflow-y-auto">
+      {details && isOpen && (
+        <pre className="mt-1 ml-4 p-2 text-[10px] bg-zinc-100 dark:bg-zinc-800 rounded overflow-x-auto max-h-32 overflow-y-auto whitespace-pre-wrap">
           {details}
         </pre>
       )}
@@ -90,14 +106,12 @@ export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
   const hasAutoGenerated = useRef<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
-  const { messages, input: chatInput, setInput: setChatInput, handleSubmit, isLoading, sendMessage, answerQuestion } = useAnimationChat({
+  const { messages, input: chatInput, setInput: setChatInput, isLoading, sendMessage, answerQuestion } = useAnimationChat({
     onCodeGenerated: (code, config) => {
       if (!overlay) return;
       const updates: Partial<Overlay> = { code };
       const duration = parseDurationFrames(code);
-      if (duration) {
-        updates.endFrame = overlay.startFrame + duration;
-      }
+      if (duration) updates.endFrame = overlay.startFrame + duration;
       if (config) {
         if (config.x !== undefined) updates.x = config.x;
         if (config.y !== undefined) updates.y = config.y;
@@ -108,7 +122,7 @@ export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
     },
     currentCode: overlay?.code,
     messages: overlay?.messages ?? [],
-    onMessagesChange: (messages) => onUpdate({ messages }),
+    onMessagesChange: (msgs) => onUpdate({ messages: msgs }),
     model: selectedModel,
     brandAssets,
   });
@@ -117,7 +131,6 @@ export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Auto-generate when created with a prompt
   useEffect(() => {
     if (overlay?.prompt && !overlay.code && hasAutoGenerated.current !== overlay.id) {
       hasAutoGenerated.current = overlay.id;
@@ -125,12 +138,10 @@ export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
     }
   }, [overlay?.id, overlay?.prompt, overlay?.code, sendMessage]);
 
-  // Reset tab when overlay changes
   useEffect(() => {
     if (!overlay?.code) setActiveTab("chat");
   }, [overlay?.id, overlay?.code]);
 
-  // Empty state when no layer selected
   if (!overlay) {
     return (
       <div className="w-96 border-l border-zinc-200 dark:border-white/5 bg-zinc-50 dark:bg-zinc-900/50 flex flex-col overflow-hidden">
@@ -141,10 +152,7 @@ export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
           <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">No layer selected</h3>
           <p className="text-xs text-zinc-500 mb-4">Select a layer to edit or create a new one</p>
           {addOverlay && (
-            <button
-              onClick={addOverlay}
-              className="px-3 py-1.5 text-xs bg-forest-500 hover:bg-forest-600 text-white rounded-lg transition-colors"
-            >
+            <button onClick={addOverlay} className="px-3 py-1.5 text-xs bg-forest-500 hover:bg-forest-600 text-white rounded-lg transition-colors">
               + New Layer
             </button>
           )}
@@ -155,7 +163,7 @@ export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
 
   return (
     <div className="w-96 border-l border-zinc-200 dark:border-white/5 bg-zinc-50 dark:bg-zinc-900/50 flex flex-col overflow-hidden">
-      {/* Header with tabs */}
+      {/* Header */}
       <div className="border-b border-zinc-200 dark:border-white/5 shrink-0">
         <div className="h-10 flex items-center justify-between px-3">
           <div className="flex gap-1">
@@ -176,26 +184,18 @@ export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
           </div>
           <div className="flex items-center gap-1">
             {addOverlay && (
-              <button
-                onClick={addOverlay}
-                className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white p-1 rounded transition-colors"
-                title="New layer"
-              >
+              <button onClick={addOverlay} className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white p-1 rounded transition-colors" title="New layer">
                 <Plus size={14} />
               </button>
             )}
-            <button
-              onClick={onRemove}
-              className="text-zinc-400 hover:text-red-500 p-1 rounded transition-colors"
-              title="Delete layer"
-            >
+            <button onClick={onRemove} className="text-zinc-400 hover:text-red-500 p-1 rounded transition-colors" title="Delete layer">
               <Trash2 size={14} />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Tab Content */}
+      {/* Content */}
       <div className="flex-1 overflow-hidden flex flex-col">
         {activeTab === "code" && (
           <div className="flex-1 overflow-auto">
@@ -206,13 +206,7 @@ export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
                 theme={theme === "dark" ? vscodeDark : undefined}
                 extensions={[javascript({ jsx: true, typescript: true })]}
                 onChange={(value) => onUpdate({ code: value })}
-                basicSetup={{
-                  lineNumbers: true,
-                  foldGutter: false,
-                  dropCursor: false,
-                  allowMultipleSelections: false,
-                  indentOnInput: false,
-                }}
+                basicSetup={{ lineNumbers: true, foldGutter: false, dropCursor: false, allowMultipleSelections: false, indentOnInput: false }}
                 style={{ fontSize: 11 }}
               />
             ) : (
@@ -228,59 +222,22 @@ export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
             {overlay.code ? (
               (() => {
                 const config = parseConfig(overlay.code);
-                if (config.length === 0) {
-                  return (
-                    <div className="text-center text-zinc-400 text-xs pt-4">
-                      No configurable settings found in code
-                    </div>
-                  );
-                }
+                if (config.length === 0) return <div className="text-center text-zinc-400 text-xs pt-4">No configurable settings found</div>;
                 return (
                   <div className="space-y-3">
                     {config.map((entry) => (
                       <div key={entry.key}>
-                        <label className="block text-[10px] text-zinc-500 mb-1">
-                          {entry.key}
-                        </label>
+                        <label className="block text-[10px] text-zinc-500 mb-1">{entry.key}</label>
                         {entry.type === "color" ? (
                           <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              value={entry.value as string}
-                              onChange={(e) => {
-                                const newCode = updateConfigValue(overlay.code, entry.key, e.target.value);
-                                onUpdate({ code: newCode });
-                              }}
-                              className="w-8 h-8 rounded border border-zinc-200 dark:border-zinc-700 cursor-pointer"
-                            />
-                            <input
-                              type="text"
-                              value={entry.value as string}
-                              onChange={(e) => {
-                                const newCode = updateConfigValue(overlay.code, entry.key, e.target.value);
-                                onUpdate({ code: newCode });
-                              }}
-                              className="flex-1 px-2 py-1.5 text-xs bg-zinc-100 dark:bg-zinc-800 rounded border-0 outline-none focus:ring-1 focus:ring-forest-500"
-                            />
+                            <input type="color" value={entry.value as string} onChange={(e) => onUpdate({ code: updateConfigValue(overlay.code, entry.key, e.target.value) })} className="w-8 h-8 rounded border border-zinc-200 dark:border-zinc-700 cursor-pointer" />
+                            <input type="text" value={entry.value as string} onChange={(e) => onUpdate({ code: updateConfigValue(overlay.code, entry.key, e.target.value) })} className="flex-1 px-2 py-1.5 text-xs bg-zinc-100 dark:bg-zinc-800 rounded border-0 outline-none focus:ring-1 focus:ring-forest-500" />
                           </div>
-                        ) : entry.type === "number" ? (
-                          <input
-                            type="number"
-                            value={entry.value as number}
-                            onChange={(e) => {
-                              const newCode = updateConfigValue(overlay.code, entry.key, parseFloat(e.target.value) || 0);
-                              onUpdate({ code: newCode });
-                            }}
-                            className="w-full px-2 py-1.5 text-xs bg-zinc-100 dark:bg-zinc-800 rounded border-0 outline-none focus:ring-1 focus:ring-forest-500"
-                          />
                         ) : (
                           <input
-                            type="text"
-                            value={entry.value as string}
-                            onChange={(e) => {
-                              const newCode = updateConfigValue(overlay.code, entry.key, e.target.value);
-                              onUpdate({ code: newCode });
-                            }}
+                            type={entry.type === "number" ? "number" : "text"}
+                            value={entry.value as string | number}
+                            onChange={(e) => onUpdate({ code: updateConfigValue(overlay.code, entry.key, entry.type === "number" ? parseFloat(e.target.value) || 0 : e.target.value) })}
                             className="w-full px-2 py-1.5 text-xs bg-zinc-100 dark:bg-zinc-800 rounded border-0 outline-none focus:ring-1 focus:ring-forest-500"
                           />
                         )}
@@ -290,147 +247,106 @@ export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
                 );
               })()
             ) : (
-              <div className="text-center text-zinc-400 text-xs pt-4">
-                Generate an animation first to configure settings
-              </div>
+              <div className="text-center text-zinc-400 text-xs pt-4">Generate an animation first</div>
             )}
           </div>
         )}
 
         {activeTab === "chat" && (
           <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Chat Messages */}
             <div className="flex-1 overflow-y-auto p-3 space-y-3">
               {messages.length === 0 && (
                 <div className="space-y-3">
-                  <div className="text-center pt-2">
-                    <p className="text-xs text-zinc-500">
-                      Describe your animation or pick an example
-                    </p>
-                  </div>
-
-                  {/* Suggestions as chips */}
+                  <p className="text-xs text-zinc-500 text-center pt-2">Describe your animation or pick an example</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {SUGGESTIONS.map((suggestion) => (
+                    {SUGGESTIONS.map((s) => (
                       <button
-                        key={suggestion.label}
+                        key={s.label}
                         onClick={() => {
-                          setChatInput(suggestion.prompt);
-                          // Find media items mentioned in the prompt (e.g., @Sample 1)
-                          const matched = media.filter((item) =>
-                            suggestion.prompt.toLowerCase().includes(`@${item.name.toLowerCase()}`)
-                          );
-                          setMentionedMedia(matched);
+                          setChatInput(s.prompt);
+                          setMentionedMedia(media.filter((item) => s.prompt.toLowerCase().includes(`@${item.name.toLowerCase()}`)));
                         }}
                         className="px-2.5 py-1.5 text-[11px] rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-forest-500 hover:text-white text-zinc-600 dark:text-zinc-400 transition-colors"
                       >
-                        {suggestion.label}
+                        {s.label}
                       </button>
                     ))}
                   </div>
-
-                  {media.length > 0 && (
-                    <p className="text-[10px] text-zinc-400 text-center">
-                      Tip: Reference your media by name in the prompt
-                    </p>
-                  )}
+                  {media.length > 0 && <p className="text-[10px] text-zinc-400 text-center">Tip: Reference media with @name</p>}
                 </div>
               )}
 
               {messages.map((message, index) => {
-                const isLastMessage = index === messages.length - 1;
-                const isStreamingThis = isLoading && isLastMessage && message.role === "assistant";
+                const isLast = index === messages.length - 1;
+                const isStreaming = isLoading && isLast && message.role === "assistant";
 
                 if (message.role === "question" && message.questions) {
-                  const answeredIndices = message.answeredIndices ?? [];
                   return (
                     <div key={message.id} className="mr-4 flex flex-col gap-3">
-                      {message.questions.map((q, qIndex) => (
+                      {message.questions.map((q, i) => (
                         <AskQuestion
-                          key={`${message.id}-${qIndex}`}
+                          key={`${message.id}-${i}`}
                           header={q.header}
                           question={q.question}
                           options={q.options}
-                          onSelect={(option) => answerQuestion(message.id, qIndex, option)}
-                          disabled={isLoading || answeredIndices.includes(qIndex) || !isLastMessage}
+                          onSelect={(opt) => answerQuestion(message.id, i, opt)}
+                          disabled={isLoading || (message.answeredIndices ?? []).includes(i) || !isLast}
                         />
                       ))}
                     </div>
                   );
                 }
 
-                return message.isError ? (
-                  <ToolCallDisplay
-                    key={message.id}
-                    icon={<X size={12} className="text-red-500" />}
-                    label="Error"
-                    isError
-                    details={message.content}
-                  />
-                ) : message.role === "user" ? (
-                  <div
-                    key={message.id}
-                    className="ml-6 border border-forest-500 text-zinc-900 dark:text-white rounded-xl rounded-tr-sm p-2.5 text-xs"
-                  >
-                    {message.content}
-                  </div>
-                ) : (
-                  <div key={message.id} className="text-[11px] text-zinc-500 dark:text-zinc-400 space-y-1">
-                    {/* Tool calls display */}
-                    {message.toolCalls && message.toolCalls.length > 0 && (
-                      <>
-                        {message.toolCalls.map((t, i) => {
-                          const hasDetails = t.name === "searchIcons" && t.args;
-                          return (
-                            <ToolCallDisplay
-                              key={`${message.id}-tool-${i}`}
-                              icon={<Check size={12} className="text-zinc-400" />}
-                              label={`${t.name} called`}
-                              details={hasDetails ? JSON.stringify(t.args, null, 2) : undefined}
-                            />
-                          );
-                        })}
-                      </>
-                    )}
-                    {isStreamingThis ? (
-                      <span className="flex items-center gap-1.5">
-                        <span className="animate-pulse">Generating</span>
-                        <span className="flex gap-0.5">
-                          <span className="w-1 h-1 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                          <span className="w-1 h-1 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                          <span className="w-1 h-1 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-                        </span>
-                      </span>
-                    ) : message.content.includes("```tsx") ? (
-                      <span className="flex items-center gap-1">
-                        <Check size={12} className="text-zinc-400" />
-                        Generated
-                      </span>
-                    ) : (
-                      <span className="whitespace-pre-wrap">{message.content}</span>
+                if (message.isError) {
+                  return (
+                    <div key={message.id} className="text-[11px]">
+                      <div className="flex items-center gap-1 text-red-500"><X size={12} /><span>Error</span></div>
+                      <pre className="mt-1 ml-4 p-2 text-[10px] bg-red-500/10 text-red-400 rounded overflow-x-auto max-h-32 overflow-y-auto whitespace-pre-wrap">{message.content}</pre>
+                    </div>
+                  );
+                }
+
+                if (message.role === "user") {
+                  return (
+                    <div key={message.id} className="ml-6 border border-forest-500 text-zinc-900 dark:text-white rounded-xl rounded-tr-sm p-2.5 text-xs">
+                      {message.content}
+                    </div>
+                  );
+                }
+
+                // Show thinking between tool calls (all complete but still streaming)
+                const allToolsComplete = message.toolCalls?.length && message.toolCalls.every((t) => t.status === "complete");
+                const isThinkingBetweenCalls = isStreaming && allToolsComplete && !message.toolCalls?.some((t) => t.name === "generate" || t.name === "askQuestions");
+
+                return (
+                  <div key={message.id} className="text-[11px] text-zinc-500 dark:text-zinc-400 space-y-1.5">
+                    {message.toolCalls?.map((t) => <ToolCallDisplay key={t.id} toolCall={t} isStreaming={isStreaming} />)}
+                    {isStreaming && !message.toolCalls?.length && !message.content && <ThinkingIndicator />}
+                    {isThinkingBetweenCalls && <ThinkingIndicator />}
+                    {message.content && !message.toolCalls?.some((t) => t.name === "generate" || t.name === "askQuestions") && (
+                      <div className="prose prose-xs prose-zinc dark:prose-invert max-w-none">
+                        <ReactMarkdown
+                          components={{
+                            p: ({ children }) => <p className="my-1 text-[11px] leading-relaxed">{children}</p>,
+                            strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                            code: ({ children }) => <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded text-[10px]">{children}</code>,
+                            ul: ({ children }) => <ul className="my-1 ml-3 list-disc">{children}</ul>,
+                            ol: ({ children }) => <ol className="my-1 ml-3 list-decimal">{children}</ol>,
+                            li: ({ children }) => <li className="my-0.5">{children}</li>,
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
                     )}
                   </div>
                 );
               })}
 
-              {/* Show loading when waiting for response */}
-              {isLoading && messages.length > 0 && messages[messages.length - 1].role !== "assistant" && (
-                <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                  <span className="flex items-center gap-1.5">
-                    <span className="animate-pulse">Thinking</span>
-                    <span className="flex gap-0.5">
-                      <span className="w-1 h-1 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                      <span className="w-1 h-1 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                      <span className="w-1 h-1 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-                    </span>
-                  </span>
-                </div>
-              )}
-
+              {isLoading && messages.length > 0 && messages[messages.length - 1].role !== "assistant" && <ThinkingIndicator />}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Chat Input */}
             <form
               ref={formRef}
               onSubmit={(e) => {
@@ -453,27 +369,14 @@ export function RightPanel({ overlay, onUpdate, onRemove }: Props) {
                 mentionedMedia={mentionedMedia}
                 onMentionedMediaChange={setMentionedMedia}
                 submitButton={
-                  <button
-                    type="submit"
-                    disabled={isLoading || !chatInput.trim()}
-                    className="absolute right-2 bottom-2 p-1.5 bg-forest-500 hover:bg-forest-600 disabled:opacity-50 text-white rounded-md transition-colors"
-                  >
+                  <button type="submit" disabled={isLoading || !chatInput.trim()} className="absolute right-2 bottom-2 p-1.5 bg-forest-500 hover:bg-forest-600 disabled:opacity-50 text-white rounded-md transition-colors">
                     {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                   </button>
                 }
               />
               <div className="mt-2">
-                <select
-                  value={selectedModel}
-                  onChange={(e) => setSelectedModel(e.target.value as AIModelId)}
-                  className="px-1.5 py-1 text-[10px] bg-transparent text-zinc-400 rounded border-0 outline-none cursor-pointer hover:text-zinc-300 transition-colors"
-                  disabled={isLoading}
-                >
-                  {AI_MODELS.map((model) => (
-                    <option key={model.id} value={model.id}>
-                      {model.label}
-                    </option>
-                  ))}
+                <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value as AIModelId)} className="px-1.5 py-1 text-[10px] bg-transparent text-zinc-400 rounded border-0 outline-none cursor-pointer hover:text-zinc-300 transition-colors" disabled={isLoading}>
+                  {AI_MODELS.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
                 </select>
               </div>
             </form>

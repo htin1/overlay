@@ -2,9 +2,9 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 import { openai } from "@ai-sdk/openai";
 import { streamText, tool, stepCountIs, type ImagePart, type TextPart } from "ai";
-import { z } from "zod";
 import { ANIMATION_SYSTEM_PROMPT, buildRefinementContext, buildMediaContext, buildBrandAssetsContext } from "@/lib/ai/prompts";
 import { searchIcons, formatIconResults } from "@/lib/ai/icons";
+import { generateSchema, askQuestionsSchema, searchIconsSchema } from "@/lib/ai/tools";
 import { DEFAULT_AI_MODEL, type AIModelId } from "@/lib/constants";
 import type { MentionedMedia } from "@/types/media";
 
@@ -152,11 +152,17 @@ export async function POST(req: Request) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: processedMessages as any,
     tools: {
+      generate: tool({
+        description: "Generate animation code. Use this when you have enough context to create or modify the animation.",
+        inputSchema: generateSchema,
+      }),
+      askQuestions: tool({
+        description: "Ask clarifying questions before generating. Use this when the request is vague or missing key details like duration, style, or content.",
+        inputSchema: askQuestionsSchema,
+      }),
       searchIcons: tool({
         description: "Search for icons across react-icons libraries (si for brands, fa6, md, hi2, tb, bs, io5, ri, vsc, gi). Use when unsure of exact icon name.",
-        inputSchema: z.object({
-          query: z.string().describe("Icon or brand name to search (e.g., 'github', 'slack', 'arrow')"),
-        }),
+        inputSchema: searchIconsSchema,
         execute: ({ query }: { query: string }) => {
           return formatIconResults(searchIcons(query, { limit: 10 }));
         },
@@ -174,7 +180,19 @@ export async function POST(req: Request) {
           if (part.type === "text-delta") {
             controller.enqueue(encoder.encode(`0:${JSON.stringify(part.text)}\n`));
           } else if (part.type === "tool-call") {
-            controller.enqueue(encoder.encode(`9:${JSON.stringify({ toolName: part.toolName, args: part.input })}\n`));
+            // Stream the tool call with its arguments
+            controller.enqueue(encoder.encode(`9:${JSON.stringify({
+              toolCallId: part.toolCallId,
+              toolName: part.toolName,
+              args: "args" in part ? part.args : part.input
+            })}\n`));
+          } else if (part.type === "tool-result") {
+            // Stream the tool result
+            controller.enqueue(encoder.encode(`a:${JSON.stringify({
+              toolCallId: part.toolCallId,
+              toolName: part.toolName,
+              result: "result" in part ? part.result : undefined,
+            })}\n`));
           }
         }
         controller.close();
