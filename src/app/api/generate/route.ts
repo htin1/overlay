@@ -4,7 +4,8 @@ import { openai } from "@ai-sdk/openai";
 import { streamText, tool, stepCountIs, type ImagePart, type TextPart } from "ai";
 import { ANIMATION_SYSTEM_PROMPT, buildRefinementContext, buildMediaContext, buildBrandAssetsContext } from "@/lib/ai/prompts";
 import { searchIcons, formatIconResults } from "@/lib/ai/icons";
-import { generateSchema, askQuestionsSchema, searchIconsSchema } from "@/lib/ai/tools";
+import { readSkillRule, formatSkillRule, buildSkillsContext } from "@/lib/ai/skills";
+import { generateSchema, askQuestionsSchema, searchIconsSchema, readSkillRuleSchema } from "@/lib/ai/tools";
 import { DEFAULT_AI_MODEL, type AIModelId } from "@/lib/constants";
 import type { MentionedMedia } from "@/types/media";
 
@@ -125,6 +126,12 @@ export async function POST(req: Request) {
   // Build system prompt with mentioned media URLs as context
   let systemPrompt = ANIMATION_SYSTEM_PROMPT;
 
+  // Add skills context so the agent knows what's available
+  const skillsContext = buildSkillsContext();
+  if (skillsContext) {
+    systemPrompt += "\n\n" + skillsContext;
+  }
+
   if (brandAssets) {
     systemPrompt += "\n\n" + buildBrandAssetsContext(brandAssets);
   }
@@ -165,6 +172,14 @@ export async function POST(req: Request) {
         inputSchema: searchIconsSchema,
         execute: ({ query }: { query: string }) => {
           return formatIconResults(searchIcons(query, { limit: 10 }));
+        },
+      }),
+      readSkillRule: tool({
+        description: "Read a detailed best practices rule from available skills. Use when you need specific guidance on Remotion patterns like timing, sequencing, transitions, etc.",
+        inputSchema: readSkillRuleSchema,
+        execute: ({ skillName, ruleName }: { skillName: string; ruleName: string }) => {
+          const rule = readSkillRule(skillName, ruleName);
+          return formatSkillRule(rule, skillName, ruleName);
         },
       }),
     },

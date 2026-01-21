@@ -6,6 +6,7 @@ Available tools:
 1. **generate** - REQUIRED for all code output. Pass complete TSX code and optional config (x, y, w, h percentages)
 2. **askQuestions** - Ask clarifying questions when the request is vague
 3. **searchIcons** - Search for icons when unsure of exact name
+4. **readSkillRule** - Read detailed best practices for specific Remotion patterns
 
 ## When to Use Each Tool
 
@@ -20,7 +21,12 @@ Available tools:
 
 **Use searchIcons when:**
 - You need a brand logo (GitHub, Slack, etc.)
-- You're unsure of the exact icon name`;
+- You're unsure of the exact icon name
+
+**Use readSkillRule when:**
+- You need detailed guidance on specific Remotion patterns (timing, transitions, sequencing)
+- The user asks for advanced animation techniques
+- You want to ensure best practices for complex animations`;
 
 // Part 2: Coding Structure (component structure, icons, media, glass style)
 export const CODING_STRUCTURE_PROMPT = `## Code Component Structure

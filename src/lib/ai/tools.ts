@@ -33,3 +33,11 @@ export const searchIconsSchema = z.object({
 });
 
 export type SearchIconsResult = z.infer<typeof searchIconsSchema>;
+
+// Tool 4: Read skill rule for detailed best practices
+export const readSkillRuleSchema = z.object({
+  skillName: z.string().describe("The skill name (e.g., 'remotion-best-practices')"),
+  ruleName: z.string().describe("The rule name without .md extension (e.g., 'timing', 'sequencing', 'spring')"),
+});
+
+export type ReadSkillRuleResult = z.infer<typeof readSkillRuleSchema>;
