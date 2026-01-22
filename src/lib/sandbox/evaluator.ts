@@ -37,6 +37,7 @@ export interface AnimationProps {
   durationInFrames: number;
   width: number;
   height: number;
+  media: Record<string, string>;
 }
 
 export type AnimationComponent = React.ComponentType<AnimationProps>;

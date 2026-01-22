@@ -24,6 +24,10 @@ interface ProcessedMessage {
 
 async function fetchImageAsBase64(url: string, baseUrl: string): Promise<string | null> {
   try {
+    if (url.startsWith("data:")) {
+      return url;
+    }
+
     // Convert relative URLs to absolute
     const absoluteUrl = url.startsWith("/") ? `${baseUrl}${url}` : url;
     const response = await fetch(absoluteUrl);

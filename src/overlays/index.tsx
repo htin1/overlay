@@ -1,7 +1,6 @@
 "use client";
 
 import { useCurrentFrame, useVideoConfig } from "remotion";
-import { useMemo } from "react";
 import { TOTAL_FRAMES } from "@/lib/constants";
 import { evaluateAnimationCode } from "@/lib/sandbox/evaluator";
 import { AlertCircle } from "lucide-react";
@@ -29,12 +28,17 @@ function CodeRenderer({ overlay }: { overlay: Overlay }) {
   const frame = useCurrentFrame();
   const { durationInFrames, width, height } = useVideoConfig();
 
-  const { component: Component, error } = useMemo(() => {
-    if (!overlay.code) {
-      return { component: null, error: null };
+  // Build media map from mentioned media in messages
+  const media: Record<string, string> = {};
+  for (const msg of overlay.messages ?? []) {
+    for (const m of msg.mentionedMedia ?? []) {
+      media[m.name] = m.url;
     }
-    return evaluateAnimationCode(overlay.code);
-  }, [overlay.code]);
+  }
+
+  const { component: Component, error } = overlay.code
+    ? evaluateAnimationCode(overlay.code)
+    : { component: null, error: null };
 
   if (error) {
     return (
@@ -92,6 +96,7 @@ function CodeRenderer({ overlay }: { overlay: Overlay }) {
         durationInFrames={durationInFrames}
         width={width}
         height={height}
+        media={media}
       />
     </div>
   );

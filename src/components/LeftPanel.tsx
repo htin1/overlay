@@ -61,15 +61,16 @@ export function LeftPanel() {
   const uploadFile = useCallback(async (file: File) => {
     if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) return;
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/media", { method: "POST", body: formData });
-      if (!res.ok) throw new Error("Upload failed");
-      const { url } = await res.json();
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
       addMedia({
         id: crypto.randomUUID(),
         name: file.name || "media",
-        url,
+        url: dataUrl,
         type: file.type.startsWith("video/") ? "video" : "image",
       });
     } catch (err) {

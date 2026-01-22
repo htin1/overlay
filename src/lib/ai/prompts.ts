@@ -39,9 +39,10 @@ const CONFIG = {
 };
 
 export default function Animation({
-  frame, durationInFrames, width, height
+  frame, durationInFrames, width, height, media
 }: {
   frame: number; durationInFrames: number; width: number; height: number;
+  media: Record<string, string>;
 }) {
   // Animation logic using frame
   return <div style={{ width: "100%", height: "100%" }}>...</div>;
@@ -50,7 +51,7 @@ export default function Animation({
 Helper functions (sub-components) can have any name but define them INSIDE the Animation function or as regular functions (not exported).
 
 ## Animation Functions
-Props provide: frame, durationInFrames, width, height. Use fps: 30 directly. Don't use hooks like useCurrentFrame/useVideoConfig.
+Props provide: frame, durationInFrames, width, height, media. Use fps: 30 directly. Don't use hooks like useCurrentFrame/useVideoConfig.
 
 **interpolate(frame, inputRange, outputRange, options)**
 - Always use \`{ extrapolateRight: "clamp" }\`
@@ -116,11 +117,12 @@ const glassCard: React.CSSProperties = {
 - Border radius 16-24px for soft pill shape
 
 ## Media
-**IMPORTANT**: Always add \`crossOrigin="anonymous"\` to enable video export.
+When the user mentions media files, use the \`media\` prop to access them by filename:
 \`\`\`tsx
-<img src={url} crossOrigin="anonymous" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-<video src={url} crossOrigin="anonymous" autoPlay muted loop playsInline style={{ objectFit: "cover" }} />
+<img src={media["image.png"]} crossOrigin="anonymous" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+<video src={media["video.mp4"]} crossOrigin="anonymous" autoPlay muted loop playsInline style={{ objectFit: "cover" }} />
 \`\`\`
+**IMPORTANT**: Always use \`media["filename"]\` to reference uploaded files. Always add \`crossOrigin="anonymous"\`.
 
 ## Overlay Size & Position
 By default, overlays are 50% width/height centered. Your component should fill its container using \`width: "100%", height: "100%"\` on the root element.
@@ -242,14 +244,13 @@ interface MediaItem {
 }
 
 export function buildMediaContext(media: MediaItem[]): string {
-  const mediaList = media.map((m) => `- ${m.name} (${m.type}): ${m.url}`).join("\n");
+  const mediaList = media.map((m) => `- "${m.name}" (${m.type})`).join("\n");
   return `
 ## Available Media
-The user has mentioned the following media files to use in the animation:
+The user has mentioned the following media files. Access them via the \`media\` prop:
 ${mediaList}
 
-Use the corresponding URL in your code.
-For images, use an <img> tag with crossOrigin="anonymous". For videos, use a <video> tag with crossOrigin="anonymous", autoPlay, muted, loop, and playsInline attributes.`;
+Example: \`<img src={media["${media[0]?.name ?? "filename.png"}"]} crossOrigin="anonymous" />\``;
 }
 
 interface BrandAssets {
