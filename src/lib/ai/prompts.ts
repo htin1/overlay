@@ -1,19 +1,34 @@
 // Part 1: Tool Usage Instructions
 export const TOOL_USAGE_PROMPT = `You are an expert motion designer creating polished React animations using Remotion.
-You will write React code that turns into an animation. Always use the generate tool to write code.
+You will write React code that turns into an animation.
 
 Available tools:
-1. **generate** - REQUIRED for all code output. Pass complete TSX code and optional config (x, y, w, h percentages)
-2. **askQuestions** - Ask clarifying questions when the request is vague
-3. **searchIcons** - Search for icons when unsure of exact name
-4. **readSkillRule** - Read detailed best practices for specific Remotion patterns
+1. **generate** - Create new animations or complete rewrites. Pass complete TSX code and optional config (x, y, w, h percentages)
+2. **edit** - Make targeted changes to existing code using string replacements. More efficient for refinements.
+3. **askQuestions** - Ask clarifying questions when the request is vague
+4. **searchIcons** - Search for icons when unsure of exact name
+5. **readSkillRule** - Read detailed best practices for specific Remotion patterns
 
 ## When to Use Each Tool
 
+**Use edit when (PREFERRED for refinements):**
+- Changing colors, text, timing values, or sizes
+- Adjusting animation parameters (spring config, interpolate values)
+- Swapping icons or fonts
+- Small structural changes
+- The current code is provided and changes are localized
+
 **Use generate when:**
-- You have enough context to create/modify the animation
-- The user gives specific details
-- Refining existing code
+- Creating a brand new animation from scratch
+- Complete rewrite requested ("start over", "completely different approach")
+- Major structural changes affecting most of the code
+- No current code exists
+
+**IMPORTANT for edit tool:**
+- Copy the oldString EXACTLY from the current code (whitespace matters!)
+- Include enough context to make the string unique
+- If a string appears multiple times, include more surrounding code
+- You can apply multiple edits in one call (up to 10)
 
 **Use askQuestions when:**
 - The request is vague (e.g., "create an animation")
@@ -228,12 +243,14 @@ export const ANIMATION_SYSTEM_PROMPT = [
 export function buildRefinementContext(currentCode: string): string {
   return `
 ## Current Animation Code
-The user is refining this existing animation:
+The user is refining this existing animation. **Use the edit tool** for targeted changes (colors, timing, text, etc.) instead of regenerating the entire file.
+
 \`\`\`tsx
 ${currentCode}
 \`\`\`
 
-Make targeted modifications based on the user's request while preserving the overall structure.`;
+**Prefer edit tool** - copy exact strings from the code above and provide replacements.
+**Use generate only** if the user wants a complete rewrite or the changes are too extensive.`;
 }
 
 interface MediaItem {

@@ -5,7 +5,7 @@ import { streamText, tool, stepCountIs, type ImagePart, type TextPart } from "ai
 import { ANIMATION_SYSTEM_PROMPT, buildRefinementContext, buildMediaContext, buildBrandAssetsContext } from "@/lib/ai/prompts";
 import { searchIcons, formatIconResults } from "@/lib/ai/icons";
 import { readSkillRule, formatSkillRule, buildSkillsContext } from "@/lib/ai/skills";
-import { generateSchema, askQuestionsSchema, searchIconsSchema, readSkillRuleSchema } from "@/lib/ai/tools";
+import { generateSchema, editSchema, askQuestionsSchema, searchIconsSchema, readSkillRuleSchema } from "@/lib/ai/tools";
 import { DEFAULT_AI_MODEL, type AIModelId } from "@/lib/constants";
 import type { MentionedMedia } from "@/types/media";
 
@@ -164,8 +164,12 @@ export async function POST(req: Request) {
     messages: processedMessages as any,
     tools: {
       generate: tool({
-        description: "Generate animation code. Use this when you have enough context to create or modify the animation.",
+        description: "Generate complete animation code from scratch. Use for new animations or complete rewrites.",
         inputSchema: generateSchema,
+      }),
+      edit: tool({
+        description: "Edit existing animation with targeted string replacements. Use for refinements like changing colors, timing, text, or small structural changes. More efficient than regenerating.",
+        inputSchema: editSchema,
       }),
       askQuestions: tool({
         description: "Ask clarifying questions before generating. Use this when the request is vague or missing key details like duration, style, or content.",

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { evaluateAnimationCode } from "@/lib/sandbox/evaluator";
+import { applyEdits, formatEditErrors, type Edit } from "@/lib/ai/applyEdits";
 
 export interface QuestionOption {
   id: string;
@@ -139,6 +140,7 @@ export function useAnimationChat({
       let buffer = "";
       let generatedCode: string | null = null;
       let generatedConfig: OverlayConfig | null = null;
+      let editData: { edits: Edit[]; config?: OverlayConfig } | null = null;
       let questions: QuestionData[] = [];
 
       while (true) {
@@ -173,6 +175,11 @@ export function useAnimationChat({
                 if (tc.toolName === "generate" && tc.args?.code) {
                   generatedCode = tc.args.code;
                   generatedConfig = tc.args.config || null;
+                } else if (tc.toolName === "edit" && tc.args?.edits) {
+                  editData = {
+                    edits: tc.args.edits as Edit[],
+                    config: tc.args.config as OverlayConfig | undefined,
+                  };
                 } else if (tc.toolName === "askQuestions" && tc.args?.questions) {
                   questions = tc.args.questions.map((q: { header?: string; question: string; options: { label: string; description?: string }[] }) => ({
                     header: q.header,
@@ -237,6 +244,39 @@ export function useAnimationChat({
               : m
           )
         );
+      } else if (editData && currentCode) {
+        const result = applyEdits(currentCode, editData.edits);
+
+        if (result.appliedCount > 0) {
+          // At least some edits succeeded - use the modified code
+          if (result.errors.length > 0) {
+            const errorMsg = formatEditErrors(result.errors);
+            updateMessages((prev) => [...prev, {
+              id: crypto.randomUUID(),
+              role: "assistant",
+              content: `Applied ${result.appliedCount}/${editData.edits.length} edits. Errors:\n${errorMsg}`,
+              isError: true,
+            }]);
+          }
+          handleCode(result.code, editData.config);
+        } else {
+          // All edits failed - retry or fall back
+          const errorMsg = formatEditErrors(result.errors);
+          const canRetry = retryCountRef.current < MAX_RETRIES;
+          updateMessages((prev) => [...prev, {
+            id: crypto.randomUUID(),
+            role: "assistant",
+            content: `Edit failed:\n${errorMsg}${canRetry ? " Retrying..." : ""}`,
+            isError: true,
+          }]);
+          if (canRetry) {
+            retryCountRef.current++;
+            setIsLoading(false);
+            setTimeout(() => sendMessage(`Edit errors:\n${errorMsg}\n\nFix oldString values or use generate instead.`, true), 100);
+          } else {
+            retryCountRef.current = 0;
+          }
+        }
       } else if (generatedCode) {
         handleCode(generatedCode, generatedConfig);
       } else {

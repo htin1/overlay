@@ -1,14 +1,17 @@
 import { z } from "zod";
 
+// Shared config schema for overlay position/size
+const overlayConfigSchema = z.object({
+  x: z.number().min(0).max(100).optional().describe("X position as percentage from left (0-100)"),
+  y: z.number().min(0).max(100).optional().describe("Y position as percentage from top (0-100)"),
+  w: z.number().min(1).max(100).optional().describe("Width as percentage of canvas (1-100)"),
+  h: z.number().min(1).max(100).optional().describe("Height as percentage of canvas (1-100)"),
+}).optional();
+
 // Tool 1: Generate animation code
 export const generateSchema = z.object({
   code: z.string().describe("Complete TSX animation code including imports, CONFIG object, and Animation function"),
-  config: z.object({
-    x: z.number().min(0).max(100).optional().describe("X position as percentage from left (0-100)"),
-    y: z.number().min(0).max(100).optional().describe("Y position as percentage from top (0-100)"),
-    w: z.number().min(1).max(100).optional().describe("Width as percentage of canvas (1-100)"),
-    h: z.number().min(1).max(100).optional().describe("Height as percentage of canvas (1-100)"),
-  }).optional().describe("Overlay position and size configuration"),
+  config: overlayConfigSchema.describe("Overlay position and size configuration"),
 });
 
 export type GenerateResult = z.infer<typeof generateSchema>;
@@ -41,3 +44,14 @@ export const readSkillRuleSchema = z.object({
 });
 
 export type ReadSkillRuleResult = z.infer<typeof readSkillRuleSchema>;
+
+// Tool 5: Edit existing animation code with targeted string replacements
+export const editSchema = z.object({
+  edits: z.array(z.object({
+    oldString: z.string().describe("Exact string to find in current code (copy exactly, whitespace matters)"),
+    newString: z.string().describe("Replacement string"),
+  })).min(1).max(10).describe("Array of string replacements to apply"),
+  config: overlayConfigSchema.describe("Optional position/size changes"),
+});
+
+export type EditResult = z.infer<typeof editSchema>;
