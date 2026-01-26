@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { Globe, Loader2, Plus, Copy, Check, X, AlertCircle, ChevronDown } from "lucide-react";
 import { useWebsiteExtractor } from "@/hooks/useWebsiteExtractor";
 import { useOverlayContext } from "@/contexts/OverlayContext";
+import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
+import { getFileName } from "@/lib/utils";
 import type { ExtractedImage } from "@/types/website";
 
 interface WebsiteImporterProps {
@@ -11,28 +13,12 @@ interface WebsiteImporterProps {
   onToggle: () => void;
 }
 
-function getFileName(url: string): string {
-  try {
-    const pathname = new URL(url).pathname;
-    return pathname.split("/").pop() || "image";
-  } catch {
-    return "image";
-  }
-}
-
-function ColorSwatch({ hex, name, onCopy }: { hex: string; name?: string; onCopy: () => void }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(hex);
-    setCopied(true);
-    onCopy();
-    setTimeout(() => setCopied(false), 1500);
-  };
+function ColorSwatch({ hex, name }: { hex: string; name?: string }) {
+  const { copied, copy } = useCopyToClipboard();
 
   return (
     <button
-      onClick={handleCopy}
+      onClick={() => copy(hex)}
       className="group relative"
       title={`${name || hex} - Click to copy`}
     >
@@ -191,7 +177,6 @@ export function WebsiteImporter({ expanded, onToggle }: WebsiteImporterProps) {
                       key={`${color.hex}-${i}`}
                       hex={color.hex}
                       name={color.name}
-                      onCopy={() => {}}
                     />
                   ))}
                 </div>
@@ -246,13 +231,7 @@ export function WebsiteImporter({ expanded, onToggle }: WebsiteImporterProps) {
 }
 
 function TextSnippet({ content, type }: { content: string; type: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
+  const { copied, copy } = useCopyToClipboard();
 
   return (
     <div className="group flex items-start gap-1.5 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
@@ -263,7 +242,7 @@ function TextSnippet({ content, type }: { content: string; type: string }) {
         {content}
       </p>
       <button
-        onClick={handleCopy}
+        onClick={() => copy(content)}
         className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-0.5"
         title="Copy"
       >
@@ -274,7 +253,7 @@ function TextSnippet({ content, type }: { content: string; type: string }) {
 }
 
 function FontItem({ name }: { name: string }) {
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyToClipboard();
   const [loaded, setLoaded] = useState(false);
 
   // Clean name for Google Fonts lookup
@@ -298,16 +277,10 @@ function FontItem({ name }: { name: string }) {
     document.head.appendChild(link);
   }, [googleName]);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(name);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
-
   return (
     <div
       className="group flex items-center gap-1.5 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
-      onClick={handleCopy}
+      onClick={() => copy(name)}
     >
       <span
         className="text-[13px] text-zinc-600 dark:text-zinc-300 flex-1 truncate"

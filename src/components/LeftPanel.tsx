@@ -4,29 +4,12 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Plus, Eye, EyeOff, GripVertical, Upload, Link, X, Film, Image, Layers, Trash2, ChevronDown } from "lucide-react";
 import { useOverlayContext } from "@/contexts/OverlayContext";
 import { OVERLAY_COLORS } from "@/lib/constants";
+import { getFileName, getMediaType } from "@/lib/utils";
 import type { Overlay } from "@/overlays";
 import { WebsiteImporter } from "./WebsiteImporter";
 
-// Re-export MediaItem type for backwards compatibility
-export type { MediaItem } from "@/hooks/useMediaManager";
-
 function getOverlayLabel(overlay: Overlay): string {
   return overlay.prompt?.slice(0, 20) || "New layer";
-}
-
-function getMediaType(url: string): "image" | "video" {
-  const ext = url.split(".").pop()?.toLowerCase() || "";
-  if (["mp4", "webm", "mov", "avi"].includes(ext)) return "video";
-  return "image";
-}
-
-function getFileName(url: string): string {
-  try {
-    const pathname = new URL(url).pathname;
-    return pathname.split("/").pop() || "media";
-  } catch {
-    return url.slice(0, 20);
-  }
 }
 
 export function LeftPanel() {
