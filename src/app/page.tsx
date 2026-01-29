@@ -41,6 +41,7 @@ function EditorContent() {
   const exportVideo = async () => {
     setExporting(true);
     try {
+      const isTransparent = backgroundColor === "transparent";
       const { getBlob } = await renderMediaOnWeb({
         composition: {
           id: "Video",
@@ -52,6 +53,9 @@ function EditorContent() {
           defaultProps: { overlays: [], backgroundColor: "transparent" },
         },
         inputProps: { overlays: visibleOverlays, backgroundColor },
+        transparent: isTransparent,
+        container: isTransparent ? "webm" : "mp4",
+        videoCodec: isTransparent ? "vp8" : "h264",
         onProgress: ({ renderedFrames }) => {
           console.log(`Rendered ${renderedFrames} / ${totalFrames} frames`);
         },
@@ -61,7 +65,7 @@ function EditorContent() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "export.mp4";
+      a.download = isTransparent ? "export.webm" : "export.mp4";
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
