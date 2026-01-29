@@ -41,12 +41,17 @@ function EditorContent() {
   const exportVideo = async () => {
     setExporting(true);
     try {
+      // Export only up to the last visible layer
+      const exportDuration = visibleOverlays.length > 0
+        ? Math.max(...visibleOverlays.map((o) => o.endFrame))
+        : totalFrames;
+
       const isTransparent = backgroundColor === "transparent";
       const { getBlob } = await renderMediaOnWeb({
         composition: {
           id: "Video",
           component: VideoComposition,
-          durationInFrames: totalFrames,
+          durationInFrames: exportDuration,
           fps: FPS,
           width: 1920,
           height: 1080,
@@ -57,7 +62,7 @@ function EditorContent() {
         container: isTransparent ? "webm" : "mp4",
         videoCodec: isTransparent ? "vp8" : "h264",
         onProgress: ({ renderedFrames }) => {
-          console.log(`Rendered ${renderedFrames} / ${totalFrames} frames`);
+          console.log(`Rendered ${renderedFrames} / ${exportDuration} frames`);
         },
       });
 
